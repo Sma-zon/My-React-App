@@ -1,0 +1,107 @@
+import React, { useState, useRef } from 'react';
+
+const COLORS = [
+  { name: 'green', code: '#0f0' },
+  { name: 'red', code: '#f00' },
+  { name: 'yellow', code: '#ff0' },
+  { name: 'blue', code: '#0ff' }
+];
+
+function getRandomColorIdx() {
+  return Math.floor(Math.random() * 4);
+}
+
+function SimonSays() {
+  const [sequence, setSequence] = useState([getRandomColorIdx()]);
+  const [userStep, setUserStep] = useState(0);
+  const [isUserTurn, setIsUserTurn] = useState(false);
+  const [score, setScore] = useState(0);
+  const [message, setMessage] = useState('Watch the sequence!');
+  const [activeIdx, setActiveIdx] = useState(null);
+  const timeoutRef = useRef();
+
+  React.useEffect(() => {
+    if (!isUserTurn) {
+      let i = 0;
+      setMessage('Watch the sequence!');
+      function showStep() {
+        setActiveIdx(sequence[i]);
+        timeoutRef.current = setTimeout(() => {
+          setActiveIdx(null);
+          i++;
+          if (i < sequence.length) {
+            timeoutRef.current = setTimeout(showStep, 400);
+          } else {
+            setIsUserTurn(true);
+            setMessage('Your turn!');
+            setUserStep(0);
+          }
+        }, 400);
+      }
+      timeoutRef.current = setTimeout(showStep, 600);
+      return () => clearTimeout(timeoutRef.current);
+    }
+  }, [sequence, isUserTurn]);
+
+  function handleColor(idx) {
+    if (!isUserTurn) return;
+    if (idx === sequence[userStep]) {
+      setActiveIdx(idx);
+      setTimeout(() => setActiveIdx(null), 200);
+      if (userStep + 1 === sequence.length) {
+        setScore((s) => s + 1);
+        setIsUserTurn(false);
+        setSequence((seq) => [...seq, getRandomColorIdx()]);
+        setMessage('Good! Next round...');
+      } else {
+        setUserStep(userStep + 1);
+      }
+    } else {
+      setMessage('Wrong! Game Over.');
+      setIsUserTurn(false);
+    }
+  }
+
+  function handleRestart() {
+    setSequence([getRandomColorIdx()]);
+    setUserStep(0);
+    setIsUserTurn(false);
+    setScore(0);
+    setMessage('Watch the sequence!');
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <h2 style={{ fontFamily: 'monospace', color: '#00ff00', textShadow: '2px 2px #000' }}>Simon Says</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 80px)', gridTemplateRows: 'repeat(2, 80px)', gap: 12, marginBottom: 16 }}>
+        {COLORS.map((c, idx) => (
+          <button
+            key={c.name}
+            onClick={() => handleColor(idx)}
+            style={{
+              width: 80,
+              height: 80,
+              background: activeIdx === idx ? '#fff' : c.code,
+              border: '4px solid #111',
+              borderRadius: 12,
+              boxShadow: '2px 2px 8px #000',
+              opacity: isUserTurn || activeIdx === idx ? 1 : 0.7,
+              cursor: isUserTurn ? 'pointer' : 'default',
+              transition: 'background 0.1s, opacity 0.1s'
+            }}
+            disabled={!isUserTurn}
+          />
+        ))}
+      </div>
+      <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>{message}</div>
+      <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>Score: {score}</div>
+      {message.includes('Game Over') && (
+        <button onClick={handleRestart} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
+          Restart
+        </button>
+      )}
+    </div>
+  );
+}
+
+export default SimonSays; 
