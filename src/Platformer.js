@@ -54,6 +54,10 @@ function Platformer() {
   // Initialize on first load
   useEffect(() => {
     initializeLevel();
+    setRunning(true);
+    setGameOver(false);
+    setScore(0);
+    setLives(3);
   }, []);
 
   // Check if device is mobile
