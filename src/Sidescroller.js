@@ -274,18 +274,18 @@ function Sidescroller() {
         onClick={handleFullscreen}
         style={{
           fontFamily: 'monospace',
-          fontSize: '1rem',
-          background: '#222',
+          fontSize: '1.2rem',
+          background: '#111',
           color: '#0f0',
-          border: '2px solid #0f0',
-          padding: '8px 16px',
+          border: '3px solid #0f0',
+          padding: '12px 24px',
           cursor: 'pointer',
-          marginTop: 10,
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          margin: 10,
-          zIndex: 10
+          marginTop: 16,
+          marginBottom: 8,
+          touchAction: 'manipulation',
+          boxShadow: '0 0 10px #0f0',
+          borderRadius: '8px',
+          fontWeight: 'bold'
         }}
       >
         {document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}

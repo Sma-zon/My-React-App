@@ -111,7 +111,20 @@ function SimonSays() {
           Restart
         </button>
       )}
-      <button onClick={handleFullscreen} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
+      <button onClick={handleFullscreen} style={{ 
+        fontFamily: 'monospace', 
+        fontSize: '1.2rem', 
+        background: '#111', 
+        color: '#0f0', 
+        border: '3px solid #0f0', 
+        padding: '12px 24px', 
+        cursor: 'pointer',
+        marginTop: 12,
+        marginBottom: 8,
+        boxShadow: '0 0 10px #0f0',
+        borderRadius: '8px',
+        fontWeight: 'bold'
+      }}>
         {document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}
       </button>
     </div>

@@ -193,14 +193,18 @@ function Snake() {
         onClick={handleFullscreen}
         style={{
           fontFamily: 'monospace',
-          fontSize: '1rem',
-          background: '#222',
+          fontSize: '1.2rem',
+          background: '#111',
           color: '#0f0',
-          border: '2px solid #0f0',
-          padding: '8px 16px',
+          border: '3px solid #0f0',
+          padding: '12px 24px',
           cursor: 'pointer',
-          marginTop: 8,
-          touchAction: 'manipulation'
+          marginTop: 12,
+          marginBottom: 8,
+          touchAction: 'manipulation',
+          boxShadow: '0 0 10px #0f0',
+          borderRadius: '8px',
+          fontWeight: 'bold'
         }}
       >
         {document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}
