@@ -1,4 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import soundManager from './sounds';
+import { Link } from 'react-router-dom';
 
 const COLORS = [
   { name: 'green', code: '#0f0' },
@@ -45,6 +47,7 @@ function SimonSays() {
 
   function handleColor(idx) {
     if (!isUserTurn) return;
+    soundManager.simonButton();
     if (idx === sequence[userStep]) {
       setActiveIdx(idx);
       setTimeout(() => setActiveIdx(null), 200);
@@ -57,12 +60,14 @@ function SimonSays() {
         setUserStep(userStep + 1);
       }
     } else {
+      soundManager.simonGameOver();
       setMessage('Wrong! Game Over.');
       setIsUserTurn(false);
     }
   }
 
   function handleRestart() {
+    soundManager.buttonClick();
     setSequence([getRandomColorIdx()]);
     setUserStep(0);
     setIsUserTurn(false);
@@ -84,6 +89,22 @@ function SimonSays() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <h2 style={{ fontFamily: 'monospace', color: '#00ff00', textShadow: '2px 2px #000' }}>Simon Says</h2>
+      <Link to="/" style={{
+        display: 'inline-block',
+        marginBottom: 16,
+        fontFamily: 'monospace',
+        fontSize: '1rem',
+        color: '#111',
+        background: '#0f0',
+        border: '2px solid #0f0',
+        padding: '6px 16px',
+        cursor: 'pointer',
+        textShadow: '1px 1px #000',
+        borderRadius: 6,
+        fontWeight: 'bold',
+        textDecoration: 'none',
+        boxShadow: '0 0 8px #0f0'
+      }}>Back to Main Menu</Link>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 80px)', gridTemplateRows: 'repeat(2, 80px)', gap: 12, marginBottom: 16 }}>
         {COLORS.map((c, idx) => (
           <button
@@ -111,7 +132,10 @@ function SimonSays() {
           Restart
         </button>
       )}
-      <button onClick={handleFullscreen} style={{ 
+      <button onClick={() => {
+        soundManager.buttonClick();
+        handleFullscreen();
+      }} style={{ 
         fontFamily: 'monospace', 
         fontSize: '1.2rem', 
         background: '#111', 

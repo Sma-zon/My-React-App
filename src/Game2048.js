@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
+import soundManager from './sounds';
+import { Link } from 'react-router-dom';
 
-const SIZE = 4;
+const BOARD_SIZE = 4;
 const INIT_BOARD = () => {
-  const board = Array(SIZE).fill().map(() => Array(SIZE).fill(0));
+  const board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(0));
   addRandom(board);
   addRandom(board);
   return board;
 };
 function addRandom(board) {
   const empty = [];
-  for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) if (!board[r][c]) empty.push([r, c]);
+  for (let r = 0; r < BOARD_SIZE; r++) for (let c = 0; c < BOARD_SIZE; c++) if (!board[r][c]) empty.push([r, c]);
   if (empty.length) {
     const [r, c] = empty[Math.floor(Math.random() * empty.length)];
     board[r][c] = Math.random() < 0.9 ? 2 : 4;
@@ -37,7 +39,7 @@ function moveLeft(board) {
       }
     }
     arr = arr.filter(x => x);
-    while (arr.length < SIZE) arr.push(0);
+    while (arr.length < BOARD_SIZE) arr.push(0);
     if (arr.some((v, i) => v !== row[i])) moved = true;
     return arr;
   });
@@ -75,10 +77,10 @@ function move(board, dir) {
   return { board: b, moved: true, score };
 }
 function isGameOver(board) {
-  for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
+  for (let r = 0; r < BOARD_SIZE; r++) for (let c = 0; c < BOARD_SIZE; c++) {
     if (!board[r][c]) return false;
-    if (c < SIZE - 1 && board[r][c] === board[r][c + 1]) return false;
-    if (r < SIZE - 1 && board[r][c] === board[r + 1][c]) return false;
+    if (c < BOARD_SIZE - 1 && board[r][c] === board[r][c + 1]) return false;
+    if (r < BOARD_SIZE - 1 && board[r][c] === board[r + 1][c]) return false;
   }
   return true;
 }
@@ -114,10 +116,17 @@ function Game2048() {
       if (dir) {
         const { board: newBoard, moved, score: addScore } = move(board, dir);
         if (moved) {
+          soundManager.game2048Move();
+          if (addScore > 0) {
+            soundManager.game2048Merge();
+          }
           addRandom(newBoard);
           setBoard(newBoard);
           setScore(s => s + addScore);
-          if (isGameOver(newBoard)) setGameOver(true);
+          if (isGameOver(newBoard)) {
+            soundManager.game2048GameOver();
+            setGameOver(true);
+          }
         }
       }
     };
@@ -145,10 +154,17 @@ function Game2048() {
         const dir = deltaX > 0 ? 'right' : 'left';
         const { board: newBoard, moved, score: addScore } = move(board, dir);
         if (moved) {
+          soundManager.game2048Move();
+          if (addScore > 0) {
+            soundManager.game2048Merge();
+          }
           addRandom(newBoard);
           setBoard(newBoard);
           setScore(s => s + addScore);
-          if (isGameOver(newBoard)) setGameOver(true);
+          if (isGameOver(newBoard)) {
+            soundManager.game2048GameOver();
+            setGameOver(true);
+          }
         }
       }
     } else {
@@ -157,10 +173,17 @@ function Game2048() {
         const dir = deltaY > 0 ? 'down' : 'up';
         const { board: newBoard, moved, score: addScore } = move(board, dir);
         if (moved) {
+          soundManager.game2048Move();
+          if (addScore > 0) {
+            soundManager.game2048Merge();
+          }
           addRandom(newBoard);
           setBoard(newBoard);
           setScore(s => s + addScore);
-          if (isGameOver(newBoard)) setGameOver(true);
+          if (isGameOver(newBoard)) {
+            soundManager.game2048GameOver();
+            setGameOver(true);
+          }
         }
       }
     }
@@ -178,6 +201,7 @@ function Game2048() {
   };
 
   function handleStart() {
+    soundManager.buttonClick();
     setBoard(INIT_BOARD());
     setScore(0);
     setGameOver(false);
@@ -187,14 +211,30 @@ function Game2048() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <h2 style={{ fontFamily: 'monospace', color: '#00ff00', textShadow: '2px 2px #000' }}>2048</h2>
+      <Link to="/" style={{
+        display: 'inline-block',
+        marginBottom: 16,
+        fontFamily: 'monospace',
+        fontSize: '1rem',
+        color: '#111',
+        background: '#0f0',
+        border: '2px solid #0f0',
+        padding: '6px 16px',
+        cursor: 'pointer',
+        textShadow: '1px 1px #000',
+        borderRadius: 6,
+        fontWeight: 'bold',
+        textDecoration: 'none',
+        boxShadow: '0 0 8px #0f0'
+      }}>Back to Main Menu</Link>
       <div 
         ref={gameBoardRef}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         style={{
           display: 'grid',
-          gridTemplateColumns: `repeat(${SIZE}, 60px)`,
-          gridTemplateRows: `repeat(${SIZE}, 60px)`,
+          gridTemplateColumns: `repeat(${BOARD_SIZE}, 60px)`,
+          gridTemplateRows: `repeat(${BOARD_SIZE}, 60px)`,
           gap: 6,
           marginBottom: 16,
           touchAction: 'none' // Prevent default touch behaviors
@@ -226,7 +266,10 @@ function Game2048() {
       
       {/* Fullscreen Button */}
       <button
-        onClick={handleFullscreen}
+        onClick={() => {
+          soundManager.buttonClick();
+          handleFullscreen();
+        }}
         style={{
           fontFamily: 'monospace',
           fontSize: '1.2rem',

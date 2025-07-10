@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
+import soundManager from './sounds';
 
 const WIDTH = 600;
 const HEIGHT = 200;
@@ -110,6 +111,7 @@ function Sidescroller() {
       }
       // Jump
       if ((gameRef.current.keys[' '] || gameRef.current.keys['jump']) && gameRef.current.playerY + PLAYER_SIZE >= GROUND) {
+        soundManager.sidescrollerJump();
         gameRef.current.playerVY = JUMP;
       }
       // Gravity
@@ -136,6 +138,7 @@ function Sidescroller() {
           gameRef.current.playerY < obs.y + OBSTACLE_HEIGHT &&
           gameRef.current.playerY + PLAYER_SIZE > obs.y
         ) {
+          soundManager.sidescrollerGameOver();
           setGameOver(true);
           setRunning(false);
         }
@@ -147,6 +150,7 @@ function Sidescroller() {
           gameRef.current.playerX - SPEED <= obs.x + OBSTACLE_WIDTH
         ) {
           obs.scored = true;
+          soundManager.sidescrollerScore();
           setScore(s => s + 1);
         }
       }
@@ -162,6 +166,7 @@ function Sidescroller() {
   }, [running, gameOver]);
 
   function handleStart() {
+    soundManager.buttonClick();
     gameRef.current.playerX = 60;
     gameRef.current.playerY = GROUND - PLAYER_SIZE;
     gameRef.current.playerVY = 0;
@@ -271,7 +276,10 @@ function Sidescroller() {
 
       {/* Fullscreen Button */}
       <button
-        onClick={handleFullscreen}
+        onClick={() => {
+          soundManager.buttonClick();
+          handleFullscreen();
+        }}
         style={{
           fontFamily: 'monospace',
           fontSize: '1.2rem',

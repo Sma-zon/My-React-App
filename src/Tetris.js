@@ -1,5 +1,8 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import soundManager from './sounds';
+import { Link } from 'react-router-dom';
 
+const BOARD_WIDTH = 10;
 const COLS = 10;
 const ROWS = 20;
 const BLOCK = 24;
@@ -78,12 +81,24 @@ function Tetris() {
     if (!running) return;
     function handleKeyDown(e) {
       if (gameOver) return;
-      if (e.key.toLowerCase() === 'a' && canMove(board, piece, -1, 0)) setPiece(p => ({ ...p, x: p.x - 1 }));
-      if (e.key.toLowerCase() === 'd' && canMove(board, piece, 1, 0)) setPiece(p => ({ ...p, x: p.x + 1 }));
-      if (e.key.toLowerCase() === 's' && canMove(board, piece, 0, 1)) setPiece(p => ({ ...p, y: p.y + 1 }));
+      if (e.key.toLowerCase() === 'a' && canMove(board, piece, -1, 0)) {
+        soundManager.tetrisMove();
+        setPiece(p => ({ ...p, x: p.x - 1 }));
+      }
+      if (e.key.toLowerCase() === 'd' && canMove(board, piece, 1, 0)) {
+        soundManager.tetrisMove();
+        setPiece(p => ({ ...p, x: p.x + 1 }));
+      }
+      if (e.key.toLowerCase() === 's' && canMove(board, piece, 0, 1)) {
+        soundManager.tetrisMove();
+        setPiece(p => ({ ...p, y: p.y + 1 }));
+      }
       if (e.key.toLowerCase() === 'w') {
         const rotated = rotate(piece.shape);
-        if (canMove(board, piece, 0, 0, rotated)) setPiece(p => ({ ...p, shape: rotated }));
+        if (canMove(board, piece, 0, 0, rotated)) {
+          soundManager.tetrisRotate();
+          setPiece(p => ({ ...p, shape: rotated }));
+        }
       }
     }
     window.addEventListener('keydown', handleKeyDown);
@@ -98,9 +113,13 @@ function Tetris() {
       } else {
         const merged = merge(board, piece);
         const { board: cleared, lines } = clearLines(merged);
+        if (lines > 0) {
+          soundManager.tetrisLineClear();
+        }
         setScore(s => s + lines * 100);
         const next = randomPiece();
         if (!canMove(cleared, next, 0, 0)) {
+          soundManager.tetrisGameOver();
           setGameOver(true);
           setBoard(cleared);
         } else {
@@ -116,14 +135,18 @@ function Tetris() {
   const handleTouchMove = (direction) => {
     if (!running || gameOver) return;
     if (direction === 'left' && canMove(board, piece, -1, 0)) {
+      soundManager.tetrisMove();
       setPiece(p => ({ ...p, x: p.x - 1 }));
     } else if (direction === 'right' && canMove(board, piece, 1, 0)) {
+      soundManager.tetrisMove();
       setPiece(p => ({ ...p, x: p.x + 1 }));
     } else if (direction === 'down' && canMove(board, piece, 0, 1)) {
+      soundManager.tetrisMove();
       setPiece(p => ({ ...p, y: p.y + 1 }));
     } else if (direction === 'rotate') {
       const rotated = rotate(piece.shape);
       if (canMove(board, piece, 0, 0, rotated)) {
+        soundManager.tetrisRotate();
         setPiece(p => ({ ...p, shape: rotated }));
       }
     }
@@ -141,6 +164,7 @@ function Tetris() {
   };
 
   function handleStart() {
+    soundManager.buttonClick();
     setBoard(Array(ROWS).fill().map(() => Array(COLS).fill(0)));
     setPiece(randomPiece());
     setScore(0);
@@ -151,6 +175,22 @@ function Tetris() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <h2 style={{ fontFamily: 'monospace', color: '#00ff00', textShadow: '2px 2px #000' }}>Tetris</h2>
+      <Link to="/" style={{
+        display: 'inline-block',
+        marginBottom: 16,
+        fontFamily: 'monospace',
+        fontSize: '1rem',
+        color: '#111',
+        background: '#0f0',
+        border: '2px solid #0f0',
+        padding: '6px 16px',
+        cursor: 'pointer',
+        textShadow: '1px 1px #000',
+        borderRadius: 6,
+        fontWeight: 'bold',
+        textDecoration: 'none',
+        boxShadow: '0 0 8px #0f0'
+      }}>Back to Main Menu</Link>
       <div style={{
         display: 'grid',
         gridTemplateColumns: `repeat(${COLS}, ${BLOCK}px)`,
@@ -186,7 +226,10 @@ function Tetris() {
       
       {/* Fullscreen Button */}
       <button
-        onClick={handleFullscreen}
+        onClick={() => {
+          soundManager.buttonClick();
+          handleFullscreen();
+        }}
         style={{
           fontFamily: 'monospace',
           fontSize: '1.2rem',

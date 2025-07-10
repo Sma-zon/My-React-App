@@ -1,4 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
+import soundManager from './sounds';
+import { Link } from 'react-router-dom';
 
 const WIDTH = 600;
 const HEIGHT = 400;
@@ -40,7 +42,10 @@ function Pong() {
     rightScore: 0,
     keys: {},
     hitCount: 0,
-    ballSpeed: BALL_SPEED
+    ballSpeed: BALL_SPEED,
+    lastTime: 0,
+    frameCount: 0,
+    particles: []
   });
 
   // Check if device is mobile
@@ -110,32 +115,107 @@ function Pong() {
     let animationId;
     const ctx = canvasRef.current.getContext('2d');
     function draw() {
+      // Clear canvas
       ctx.fillStyle = '#111';
       ctx.fillRect(0, 0, WIDTH, HEIGHT);
-      // Net
+      
+      // Draw particles
+      gameRef.current.particles.forEach(particle => {
+        ctx.fillStyle = `rgba(0, 255, 0, ${particle.alpha})`;
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      
+      // Net with glow effect
       ctx.strokeStyle = '#0f0';
+      ctx.lineWidth = 2;
       ctx.setLineDash([5, 15]);
       ctx.beginPath();
       ctx.moveTo(WIDTH / 2, 0);
       ctx.lineTo(WIDTH / 2, HEIGHT);
       ctx.stroke();
       ctx.setLineDash([]);
-      // Paddles
+      
+      // Paddles with enhanced visuals
+      const leftY = gameRef.current.leftY;
+      const rightY = gameRef.current.rightY;
+      
+      // Left paddle shadow
+      ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+      ctx.fillRect(2, leftY + 2, PADDLE_WIDTH, PADDLE_HEIGHT);
+      
+      // Left paddle
       ctx.fillStyle = '#0f0';
-      ctx.fillRect(0, gameRef.current.leftY, PADDLE_WIDTH, PADDLE_HEIGHT);
-      ctx.fillRect(WIDTH - PADDLE_WIDTH, gameRef.current.rightY, PADDLE_WIDTH, PADDLE_HEIGHT);
+      ctx.fillRect(0, leftY, PADDLE_WIDTH, PADDLE_HEIGHT);
+      
+      // Right paddle shadow
+      ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+      ctx.fillRect(WIDTH - PADDLE_WIDTH + 2, rightY + 2, PADDLE_WIDTH, PADDLE_HEIGHT);
+      
+      // Right paddle
+      ctx.fillStyle = '#0f0';
+      ctx.fillRect(WIDTH - PADDLE_WIDTH, rightY, PADDLE_WIDTH, PADDLE_HEIGHT);
+      
+      // Ball with enhanced visuals
+      const ballX = gameRef.current.ballX;
+      const ballY = gameRef.current.ballY;
+      
+      // Ball shadow
+      ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+      ctx.beginPath();
+      ctx.arc(ballX + 2, ballY + 2, BALL_SIZE / 2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Ball glow
+      ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, BALL_SIZE, 0, Math.PI * 2);
+      ctx.fill();
+      
       // Ball
-      ctx.fillRect(gameRef.current.ballX, gameRef.current.ballY, BALL_SIZE, BALL_SIZE);
-      // Score
+      ctx.fillStyle = '#0f0';
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, BALL_SIZE / 2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Ball trail
+      const trailLength = 5;
+      for (let i = 1; i <= trailLength; i++) {
+        const alpha = 0.3 - (i * 0.05);
+        const size = (BALL_SIZE / 2) - (i * 0.5);
+        ctx.fillStyle = `rgba(0, 255, 0, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(ballX - gameRef.current.ballVX * i * 0.5, 
+                ballY - gameRef.current.ballVY * i * 0.5, 
+                size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // Score with enhanced styling
       ctx.font = '20px monospace';
       ctx.textAlign = 'left';
+      ctx.fillStyle = '#0f0';
       ctx.fillText(`Ball Speed: ${gameRef.current.ballSpeed.toFixed(1)}`, 10, HEIGHT - 10);
+      ctx.fillText(`Mode: ${modeName}`, 10, HEIGHT - 30);
+      ctx.fillText(`Press M to change mode`, 10, HEIGHT - 50);
+      
       ctx.textAlign = 'center';
       ctx.font = '32px monospace';
+      ctx.fillStyle = '#0f0';
       ctx.fillText(gameRef.current.leftScore, WIDTH / 4, 40);
       ctx.fillText(gameRef.current.rightScore, WIDTH * 3 / 4, 40);
     }
     function update() {
+      // Update particles
+      gameRef.current.particles = gameRef.current.particles.filter(particle => {
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+        particle.alpha -= 0.03;
+        particle.life--;
+        return particle.life > 0 && particle.alpha > 0;
+      });
+      
       // Move paddles based on mode
       if (mode === 0) {
         // 2 Player
@@ -196,17 +276,33 @@ function Pong() {
         hit = true;
       }
       if (hit) {
+        soundManager.pongHit();
         gameRef.current.hitCount = (gameRef.current.hitCount || 0) + 1;
         if (gameRef.current.hitCount % 5 === 0) {
           gameRef.current.ballSpeed += 0.5;
           setBallSpeed(gameRef.current.ballSpeed);
         }
+        
+        // Create hit particles
+        for (let i = 0; i < 8; i++) {
+          gameRef.current.particles.push({
+            x: gameRef.current.ballX + BALL_SIZE / 2,
+            y: gameRef.current.ballY + BALL_SIZE / 2,
+            vx: (Math.random() - 0.5) * 4,
+            vy: (Math.random() - 0.5) * 4,
+            size: Math.random() * 3 + 1,
+            alpha: 1,
+            life: 30
+          });
+        }
       }
       // Score
       if (gameRef.current.ballX < 0) {
+        soundManager.pongScore();
         gameRef.current.rightScore++;
         resetBall(-1);
       } else if (gameRef.current.ballX > WIDTH) {
+        soundManager.pongScore();
         gameRef.current.leftScore++;
         resetBall(1);
       }
@@ -232,6 +328,22 @@ function Pong() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <h2 style={{ fontFamily: 'monospace', color: '#00ff00', textShadow: '2px 2px #000' }}>Pong</h2>
+      <Link to="/" style={{
+        display: 'inline-block',
+        marginBottom: 16,
+        fontFamily: 'monospace',
+        fontSize: '1rem',
+        color: '#111',
+        background: '#0f0',
+        border: '2px solid #0f0',
+        padding: '6px 16px',
+        cursor: 'pointer',
+        textShadow: '1px 1px #000',
+        borderRadius: 6,
+        fontWeight: 'bold',
+        textDecoration: 'none',
+        boxShadow: '0 0 8px #0f0'
+      }}>Back to Main Menu</Link>
       <canvas
         ref={canvasRef}
         width={WIDTH}
@@ -248,7 +360,10 @@ function Pong() {
         {MODES.map((m, idx) => (
           <button
             key={m.name}
-            onClick={() => setMode(idx)}
+            onClick={() => {
+              soundManager.buttonClick();
+              setMode(idx);
+            }}
             style={{
               fontFamily: 'monospace',
               fontSize: '1rem',
@@ -267,7 +382,10 @@ function Pong() {
       
       {/* Fullscreen Button */}
       <button
-        onClick={handleFullscreen}
+        onClick={() => {
+          soundManager.buttonClick();
+          handleFullscreen();
+        }}
         style={{
           fontFamily: 'monospace',
           fontSize: '1.2rem',

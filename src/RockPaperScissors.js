@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import soundManager from './sounds';
+import { Link } from 'react-router-dom';
 
 const CHOICES = ['Rock', 'Paper', 'Scissors'];
 const COLORS = { Rock: '#0ff', Paper: '#ff0', Scissors: '#f0f' };
@@ -21,11 +23,20 @@ function RockPaperScissors() {
   const [result, setResult] = useState(null);
 
   const handleChoice = (playerChoice) => {
+    soundManager.rpsChoice();
     const choices = ['Rock', 'Paper', 'Scissors'];
     const computerChoice = choices[Math.floor(Math.random() * 3)];
     setPlayerChoice(playerChoice);
     setComputerChoice(computerChoice);
-    setResult(getResult(playerChoice, computerChoice));
+    const result = getResult(playerChoice, computerChoice);
+    setResult(result);
+    
+    // Play win/lose sound
+    if (result === 'You Win!') {
+      setTimeout(() => soundManager.rpsWin(), 100);
+    } else if (result === 'You Lose!') {
+      setTimeout(() => soundManager.rpsLose(), 100);
+    }
   };
 
   // Fullscreen functionality
@@ -40,6 +51,7 @@ function RockPaperScissors() {
   };
 
   const resetGame = () => {
+    soundManager.buttonClick();
     setPlayerChoice(null);
     setComputerChoice(null);
     setResult(null);
@@ -48,6 +60,22 @@ function RockPaperScissors() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <h2 style={{ fontFamily: 'monospace', color: '#00ff00', textShadow: '2px 2px #000' }}>Rock Paper Scissors</h2>
+      <Link to="/" style={{
+        display: 'inline-block',
+        marginBottom: 16,
+        fontFamily: 'monospace',
+        fontSize: '1rem',
+        color: '#111',
+        background: '#0f0',
+        border: '2px solid #0f0',
+        padding: '6px 16px',
+        cursor: 'pointer',
+        textShadow: '1px 1px #000',
+        borderRadius: 6,
+        fontWeight: 'bold',
+        textDecoration: 'none',
+        boxShadow: '0 0 8px #0f0'
+      }}>Back to Main Menu</Link>
       {!playerChoice ? (
         <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
           {CHOICES.map((choice) => (
@@ -88,7 +116,10 @@ function RockPaperScissors() {
       
       {/* Fullscreen Button */}
       <button
-        onClick={handleFullscreen}
+        onClick={() => {
+          soundManager.buttonClick();
+          handleFullscreen();
+        }}
         style={{
           fontFamily: 'monospace',
           fontSize: '1.2rem',

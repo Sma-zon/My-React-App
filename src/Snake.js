@@ -1,4 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
+import soundManager from './sounds';
+import { Link } from 'react-router-dom';
 
 const WIDTH = 400;
 const HEIGHT = 400;
@@ -126,6 +128,7 @@ function Snake() {
       // Self collision
       for (const s of gameRef.current.snake) {
         if (s.x === head.x && s.y === head.y) {
+          soundManager.snakeGameOver();
           gameRef.current.alive = false;
           setRunning(false);
           return;
@@ -135,6 +138,7 @@ function Snake() {
       let ate = false;
       if (head.x === gameRef.current.food.x && head.y === gameRef.current.food.y) {
         ate = true;
+        soundManager.snakeEat();
         setScore((s) => s + 1);
         // Place new food
         let newFood;
@@ -173,6 +177,22 @@ function Snake() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <h2 style={{ fontFamily: 'monospace', color: '#00ff00', textShadow: '2px 2px #000' }}>Snake</h2>
+      <Link to="/" style={{
+        display: 'inline-block',
+        marginBottom: 16,
+        fontFamily: 'monospace',
+        fontSize: '1rem',
+        color: '#111',
+        background: '#0f0',
+        border: '2px solid #0f0',
+        padding: '6px 16px',
+        cursor: 'pointer',
+        textShadow: '1px 1px #000',
+        borderRadius: 6,
+        fontWeight: 'bold',
+        textDecoration: 'none',
+        boxShadow: '0 0 8px #0f0'
+      }}>Back to Main Menu</Link>
       <canvas
         ref={canvasRef}
         width={WIDTH}
@@ -183,14 +203,20 @@ function Snake() {
         Controls: W/A/S/D
       </div>
       {(!running || !gameRef.current.alive) && (
-        <button onClick={handleStart} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
+        <button onClick={() => {
+          soundManager.buttonClick();
+          handleStart();
+        }} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
           {score === 0 ? 'Start' : 'Restart'}
         </button>
       )}
       
       {/* Fullscreen Button */}
       <button
-        onClick={handleFullscreen}
+        onClick={() => {
+          soundManager.buttonClick();
+          handleFullscreen();
+        }}
         style={{
           fontFamily: 'monospace',
           fontSize: '1.2rem',
