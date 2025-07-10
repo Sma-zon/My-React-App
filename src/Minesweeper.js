@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import soundManager from './sounds';
+import { Link } from 'react-router-dom';
 
 const BOARD_SIZE = 10;
 const MINES_COUNT = 15;
@@ -358,6 +359,22 @@ function Minesweeper() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <h2 style={{ fontFamily: 'monospace', color: '#00ff00', textShadow: '2px 2px #000' }}>Minesweeper</h2>
+      <Link to="/" style={{
+        display: 'inline-block',
+        marginBottom: 16,
+        fontFamily: 'monospace',
+        fontSize: '1rem',
+        color: '#111',
+        background: '#0f0',
+        border: '2px solid #0f0',
+        padding: '6px 16px',
+        cursor: 'pointer',
+        textShadow: '1px 1px #000',
+        borderRadius: 6,
+        fontWeight: 'bold',
+        textDecoration: 'none',
+        boxShadow: '0 0 8px #0f0'
+      }}>Back to Main Menu</Link>
       
       {/* Game Info */}
       <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>

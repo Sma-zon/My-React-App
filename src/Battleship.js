@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import soundManager from './sounds';
+import { Link } from 'react-router-dom';
 
 const BOARD_SIZE = 10;
 const SHIPS = [
@@ -149,10 +150,12 @@ function Battleship() {
     if (newBoard[row][col] > 0) {
       // Hit!
       soundManager.battleshipHit();
+      
+      // Get the ship index BEFORE modifying the board
+      const shipIndex = newBoard[row][col] - 1;
       newBoard[row][col] = -1; // Hit marker
       
       // Check if ship is sunk
-      const shipIndex = newBoard[row][col] - 1;
       const ship = newShips[shipIndex];
       if (ship && !ship.sunk) {
         let sunk = true;
@@ -233,10 +236,12 @@ function Battleship() {
     
     if (newBoard[row][col] > 0) {
       soundManager.battleshipHit();
+      
+      // Get the ship index BEFORE modifying the board
+      const shipIndex = newBoard[row][col] - 1;
       newBoard[row][col] = -1;
       
       // Check if ship is sunk
-      const shipIndex = newBoard[row][col] - 1;
       const ship = newShips[shipIndex];
       if (ship && !ship.sunk) {
         let sunk = true;
@@ -353,6 +358,22 @@ function Battleship() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <h2 style={{ fontFamily: 'monospace', color: '#00ff00', textShadow: '2px 2px #000' }}>Battleship</h2>
+      <Link to="/" style={{
+        display: 'inline-block',
+        marginBottom: 16,
+        fontFamily: 'monospace',
+        fontSize: '1rem',
+        color: '#111',
+        background: '#0f0',
+        border: '2px solid #0f0',
+        padding: '6px 16px',
+        cursor: 'pointer',
+        textShadow: '1px 1px #000',
+        borderRadius: 6,
+        fontWeight: 'bold',
+        textDecoration: 'none',
+        boxShadow: '0 0 8px #0f0'
+      }}>Back to Main Menu</Link>
       
       {/* Mode Selection */}
       {gamePhase === 'setup' && currentPlayer === 0 && (
