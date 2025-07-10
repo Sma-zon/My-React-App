@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import soundManager from './sounds';
 import { Link } from 'react-router-dom';
 
@@ -22,10 +22,12 @@ function SimonSays() {
   const [activeIdx, setActiveIdx] = useState(null);
   const timeoutRef = useRef();
 
-  React.useEffect(() => {
+  // Show sequence
+  useEffect(() => {
     if (!isUserTurn) {
       let i = 0;
       setMessage('Watch the sequence!');
+      
       function showStep() {
         setActiveIdx(sequence[i]);
         timeoutRef.current = setTimeout(() => {
@@ -40,17 +42,35 @@ function SimonSays() {
           }
         }, 400);
       }
+      
       timeoutRef.current = setTimeout(showStep, 600);
-      return () => clearTimeout(timeoutRef.current);
+      
+      return () => {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+      };
     }
   }, [sequence, isUserTurn]);
 
-  function handleColor(idx) {
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleColor = useCallback((idx) => {
     if (!isUserTurn) return;
+    
     soundManager.simonButton();
+    
     if (idx === sequence[userStep]) {
       setActiveIdx(idx);
       setTimeout(() => setActiveIdx(null), 200);
+      
       if (userStep + 1 === sequence.length) {
         setScore((s) => s + 1);
         setIsUserTurn(false);
@@ -64,15 +84,22 @@ function SimonSays() {
       setMessage('Wrong! Game Over.');
       setIsUserTurn(false);
     }
-  }
+  }, [isUserTurn, sequence, userStep]);
 
   function handleRestart() {
     soundManager.buttonClick();
+    
+    // Clear any existing timeouts
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
     setSequence([getRandomColorIdx()]);
     setUserStep(0);
     setIsUserTurn(false);
     setScore(0);
     setMessage('Watch the sequence!');
+    setActiveIdx(null);
   }
 
   // Fullscreen functionality

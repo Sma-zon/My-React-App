@@ -9,16 +9,28 @@ class SoundManager {
 
   init() {
     try {
-      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      // Check if audio context is already created
+      if (!this.audioContext) {
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
     } catch (e) {
       console.log('Web Audio API not supported');
       this.enabled = false;
     }
   }
 
+  // Resume audio context if suspended
+  resumeContext() {
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      this.audioContext.resume();
+    }
+  }
+
   // Generate a beep sound
   beep(frequency = 440, duration = 0.1, type = 'square') {
     if (!this.enabled || !this.audioContext) return;
+    
+    this.resumeContext();
     
     const oscillator = this.audioContext.createOscillator();
     const gainNode = this.audioContext.createGain();
@@ -40,6 +52,8 @@ class SoundManager {
   sweep(startFreq = 200, endFreq = 800, duration = 0.3) {
     if (!this.enabled || !this.audioContext) return;
     
+    this.resumeContext();
+    
     const oscillator = this.audioContext.createOscillator();
     const gainNode = this.audioContext.createGain();
     
@@ -60,6 +74,8 @@ class SoundManager {
   // Generate a noise sound (for explosions, game over)
   noise(duration = 0.2) {
     if (!this.enabled || !this.audioContext) return;
+    
+    this.resumeContext();
     
     const bufferSize = this.audioContext.sampleRate * duration;
     const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);

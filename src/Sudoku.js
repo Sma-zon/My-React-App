@@ -293,7 +293,7 @@ function Sudoku() {
                   : originalBoard[rowIndex][colIndex] !== 0 
                     ? '#333' 
                     : '#111',
-                color: originalBoard[rowIndex][colIndex] !== 0 ? '#fff' : '#0f0',
+                color: originalBoard[rowIndex][colIndex] !== 0 ? '#00f' : '#0f0', // Blue for original numbers
                 border: '1px solid #0f0',
                 display: 'flex',
                 alignItems: 'center',
@@ -301,7 +301,8 @@ function Sudoku() {
                 fontFamily: 'monospace',
                 fontSize: isMobile ? '0.8rem' : '1rem',
                 cursor: originalBoard[rowIndex][colIndex] === 0 ? 'pointer' : 'default',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                textShadow: '1px 1px 2px #000' // Add shadow for better visibility
               }}
             >
               {cell !== 0 ? cell : ''}

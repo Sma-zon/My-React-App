@@ -196,13 +196,18 @@ function Battleship() {
     if (allShipsSunk) {
       setWinner(currentPlayer === 0 ? 'Player' : 'Enemy');
       setGamePhase('gameOver');
-      soundManager.battleshipWin();
+      if (currentPlayer === 0) {
+        soundManager.battleshipWin();
+      } else {
+        soundManager.battleshipLose();
+      }
       return;
     }
     
     // Switch turns
     if (mode === 0) {
       // Single player - AI turn
+      setCurrentPlayer(1);
       setTimeout(() => {
         makeAIMove();
       }, 1000);

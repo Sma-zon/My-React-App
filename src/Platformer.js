@@ -29,7 +29,6 @@ const LEVEL = [
   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 ];
 
@@ -160,6 +159,29 @@ function Platformer() {
     return gameRef.current.level[tileY][tileX];
   };
 
+  // Screen wrapping function
+  const wrapPosition = (x, y) => {
+    const levelWidth = gameRef.current.level[0].length * TILE_SIZE;
+    const levelHeight = gameRef.current.level.length * TILE_SIZE;
+    
+    let newX = x;
+    let newY = y;
+    
+    // Wrap horizontally
+    if (x < 0) {
+      newX = levelWidth - PLAYER_SIZE;
+    } else if (x > levelWidth - PLAYER_SIZE) {
+      newX = 0;
+    }
+    
+    // Wrap vertically (only if falling off bottom)
+    if (y > levelHeight) {
+      newY = 0;
+    }
+    
+    return { x: newX, y: newY };
+  };
+
   // Game loop
   useEffect(() => {
     if (!running) return;
@@ -256,7 +278,7 @@ function Platformer() {
     function update() {
       const player = gameRef.current.player;
       
-      // Handle input
+      // Handle input - allow movement in all directions
       if (gameRef.current.keys['arrowleft'] || gameRef.current.keys['a']) {
         player.vx = -MOVE_SPEED;
       } else if (gameRef.current.keys['arrowright'] || gameRef.current.keys['d']) {
@@ -271,6 +293,11 @@ function Platformer() {
       // Update position
       player.x += player.vx;
       player.y += player.vy;
+      
+      // Apply screen wrapping
+      const wrapped = wrapPosition(player.x, player.y);
+      player.x = wrapped.x;
+      player.y = wrapped.y;
       
       // Check collisions
       const playerLeft = player.x;
@@ -299,19 +326,21 @@ function Platformer() {
         player.vy = 0;
       }
       
-      // Check wall collisions
+      // Check wall collisions - but allow wrapping instead of blocking
       const leftTop = checkTileCollision(playerLeft, playerTop);
       const leftBottom = checkTileCollision(playerLeft, playerBottom);
       
       if (leftTop === 1 || leftBottom === 1) {
-        player.x = Math.floor(playerLeft / TILE_SIZE) * TILE_SIZE + TILE_SIZE;
+        // Instead of blocking, wrap to the right side
+        player.x = gameRef.current.level[0].length * TILE_SIZE - PLAYER_SIZE;
       }
       
       const rightTop = checkTileCollision(playerRight, playerTop);
       const rightBottom = checkTileCollision(playerRight, playerBottom);
       
       if (rightTop === 1 || rightBottom === 1) {
-        player.x = Math.floor(playerRight / TILE_SIZE) * TILE_SIZE - PLAYER_SIZE;
+        // Instead of blocking, wrap to the left side
+        player.x = 0;
       }
       
       // Check coin collisions (optimized)

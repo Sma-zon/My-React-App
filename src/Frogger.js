@@ -38,7 +38,7 @@ function Frogger() {
   // Initialize vehicles
   const initializeVehicles = () => {
     const vehicles = [];
-    const speeds = [2, 3, 4, 5, 6];
+    const speeds = [1, 1.5, 2, 2.5, 3]; // Reduced speeds for easier gameplay
     
     // Create vehicles for each lane
     for (let lane = 1; lane < 6; lane++) {
@@ -63,7 +63,7 @@ function Frogger() {
   // Initialize logs
   const initializeLogs = () => {
     const logs = [];
-    const speeds = [2, 3, 4];
+    const speeds = [1, 1.5, 2]; // Reduced speeds for easier gameplay
     
     // Create logs for water lanes
     for (let lane = 6; lane < 11; lane++) {
@@ -87,7 +87,7 @@ function Frogger() {
   // Initialize turtles
   const initializeTurtles = () => {
     const turtles = [];
-    const speeds = [1, 2];
+    const speeds = [0.5, 1]; // Reduced speeds for easier gameplay
     
     // Create turtles for water lanes
     for (let lane = 6; lane < 11; lane++) {

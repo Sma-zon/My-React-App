@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import soundManager from './sounds';
 import { Link } from 'react-router-dom';
 
@@ -9,23 +9,32 @@ const INIT_BOARD = () => {
   addRandom(board);
   return board;
 };
+
 function addRandom(board) {
   const empty = [];
-  for (let r = 0; r < BOARD_SIZE; r++) for (let c = 0; c < BOARD_SIZE; c++) if (!board[r][c]) empty.push([r, c]);
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      if (!board[r][c]) empty.push([r, c]);
+    }
+  }
   if (empty.length) {
     const [r, c] = empty[Math.floor(Math.random() * empty.length)];
     board[r][c] = Math.random() < 0.9 ? 2 : 4;
   }
 }
+
 function clone(board) {
   return board.map(row => [...row]);
 }
+
 function transpose(board) {
   return board[0].map((_, c) => board.map(row => row[c]));
 }
+
 function reverse(board) {
   return board.map(row => [...row].reverse());
 }
+
 function moveLeft(board) {
   let moved = false;
   let score = 0;
@@ -45,9 +54,11 @@ function moveLeft(board) {
   });
   return { board: newBoard, moved, score };
 }
+
 function move(board, dir) {
   let b = clone(board);
   let score = 0;
+  
   if (dir === 'left') {
     const res = moveLeft(b);
     b = res.board;
@@ -74,14 +85,29 @@ function move(board, dir) {
     score = res.score;
     if (!res.moved) return { board, moved: false, score: 0 };
   }
+  
   return { board: b, moved: true, score };
 }
+
 function isGameOver(board) {
-  for (let r = 0; r < BOARD_SIZE; r++) for (let c = 0; c < BOARD_SIZE; c++) {
-    if (!board[r][c]) return false;
-    if (c < BOARD_SIZE - 1 && board[r][c] === board[r][c + 1]) return false;
-    if (r < BOARD_SIZE - 1 && board[r][c] === board[r + 1][c]) return false;
+  // Check if there are any empty cells
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      if (!board[r][c]) return false;
+    }
   }
+  
+  // Check if any merges are possible
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      const current = board[r][c];
+      // Check right neighbor
+      if (c < BOARD_SIZE - 1 && board[r][c + 1] === current) return false;
+      // Check bottom neighbor
+      if (r < BOARD_SIZE - 1 && board[r + 1][c] === current) return false;
+    }
+  }
+  
   return true;
 }
 
@@ -104,45 +130,59 @@ function Game2048() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Keyboard controls
   useEffect(() => {
     if (!running) return;
+    
     const handleKeyDown = (e) => {
       if (gameOver) return;
+      
       let dir = null;
       if (e.key.toLowerCase() === 'a') dir = 'left';
       if (e.key.toLowerCase() === 'd') dir = 'right';
       if (e.key.toLowerCase() === 'w') dir = 'up';
       if (e.key.toLowerCase() === 's') dir = 'down';
+      
       if (dir) {
-        const { board: newBoard, moved, score: addScore } = move(board, dir);
-        if (moved) {
-          soundManager.game2048Move();
-          if (addScore > 0) {
-            soundManager.game2048Merge();
-          }
-          addRandom(newBoard);
-          setBoard(newBoard);
-          setScore(s => s + addScore);
-          if (isGameOver(newBoard)) {
-            soundManager.game2048GameOver();
-            setGameOver(true);
-          }
-        }
+        handleMove(dir);
       }
     };
+    
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [board, gameOver, running]);
 
+  // Handle move logic
+  const handleMove = useCallback((dir) => {
+    const { board: newBoard, moved, score: addScore } = move(board, dir);
+    
+    if (moved) {
+      soundManager.game2048Move();
+      if (addScore > 0) {
+        soundManager.game2048Merge();
+      }
+      
+      addRandom(newBoard);
+      setBoard(newBoard);
+      setScore(s => s + addScore);
+      
+      if (isGameOver(newBoard)) {
+        soundManager.game2048GameOver();
+        setGameOver(true);
+      }
+    }
+  }, [board]);
+
   // Touch controls
-  const handleTouchStart = (e) => {
+  const handleTouchStart = useCallback((e) => {
     if (!running || gameOver) return;
     const touch = e.touches[0];
     touchStart.current = { x: touch.clientX, y: touch.clientY };
-  };
+  }, [running, gameOver]);
 
-  const handleTouchEnd = (e) => {
+  const handleTouchEnd = useCallback((e) => {
     if (!running || gameOver) return;
+    
     const touch = e.changedTouches[0];
     const deltaX = touch.clientX - touchStart.current.x;
     const deltaY = touch.clientY - touchStart.current.y;
@@ -152,42 +192,16 @@ function Game2048() {
       // Horizontal swipe
       if (Math.abs(deltaX) > minSwipeDistance) {
         const dir = deltaX > 0 ? 'right' : 'left';
-        const { board: newBoard, moved, score: addScore } = move(board, dir);
-        if (moved) {
-          soundManager.game2048Move();
-          if (addScore > 0) {
-            soundManager.game2048Merge();
-          }
-          addRandom(newBoard);
-          setBoard(newBoard);
-          setScore(s => s + addScore);
-          if (isGameOver(newBoard)) {
-            soundManager.game2048GameOver();
-            setGameOver(true);
-          }
-        }
+        handleMove(dir);
       }
     } else {
       // Vertical swipe
       if (Math.abs(deltaY) > minSwipeDistance) {
         const dir = deltaY > 0 ? 'down' : 'up';
-        const { board: newBoard, moved, score: addScore } = move(board, dir);
-        if (moved) {
-          soundManager.game2048Move();
-          if (addScore > 0) {
-            soundManager.game2048Merge();
-          }
-          addRandom(newBoard);
-          setBoard(newBoard);
-          setScore(s => s + addScore);
-          if (isGameOver(newBoard)) {
-            soundManager.game2048GameOver();
-            setGameOver(true);
-          }
-        }
+        handleMove(dir);
       }
     }
-  };
+  }, [running, gameOver, handleMove]);
 
   // Fullscreen functionality
   const handleFullscreen = () => {

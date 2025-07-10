@@ -104,7 +104,7 @@ function ConnectFour() {
           const newBoard = board.map(row => [...row]);
           newBoard[row][col] = 2;
           
-          const score = minimax(newBoard, 4, false, -Infinity, Infinity);
+          const score = minimax(newBoard, 3, false, -Infinity, Infinity);
           if (score > bestScore) {
             bestScore = score;
             bestMove = col;
@@ -198,34 +198,47 @@ function ConnectFour() {
 
     // Switch players
     setCurrentPlayer(currentPlayer === 1 ? 2 : 1);
-
+    
     // AI move in single player mode
-    if (gameMode === 'single-player' && currentPlayer === 1) {
+    if (gameMode === 'single-player' && currentPlayer === 2 && !gameWon) {
       setAiThinking(true);
       setTimeout(() => {
-        const aiCol = getAIMove(newBoard);
-        const aiRow = getLowestEmptyRow(aiCol);
-        
-        if (aiRow !== -1) {
-          const aiBoard = newBoard.map(row => [...row]);
-          aiBoard[aiRow][aiCol] = 2;
-          setBoard(aiBoard);
-          
-          soundManager.connectFourDrop();
-          
-          if (checkWin(aiBoard, aiRow, aiCol, 2)) {
-            setGameWon(true);
-            setWinner(2);
-            soundManager.connectFourWin();
-          } else if (isDraw(aiBoard)) {
-            setGameWon(true);
-            setWinner('draw');
-          } else {
-            setCurrentPlayer(1);
-          }
-        }
+        makeAIMove(newBoard);
         setAiThinking(false);
       }, 500);
+    }
+  };
+
+  // Separate AI move function to avoid recursive calls
+  const makeAIMove = (currentBoard) => {
+    const aiCol = getAIMove(currentBoard);
+    if (aiCol !== -1 && !isColumnFull(aiCol)) {
+      const aiRow = getLowestEmptyRow(aiCol);
+      if (aiRow !== -1) {
+        const newBoard = currentBoard.map(row => [...row]);
+        newBoard[aiRow][aiCol] = 2;
+        setBoard(newBoard);
+        
+        soundManager.connectFourDrop();
+        
+        // Check for win
+        if (checkWin(newBoard, aiRow, aiCol, 2)) {
+          setGameWon(true);
+          setWinner(2);
+          soundManager.connectFourWin();
+          return;
+        }
+        
+        // Check for draw
+        if (isDraw(newBoard)) {
+          setGameWon(true);
+          setWinner('draw');
+          return;
+        }
+        
+        // Switch back to player
+        setCurrentPlayer(1);
+      }
     }
   };
 

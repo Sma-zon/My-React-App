@@ -1,50 +1,57 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import soundManager from './sounds';
+import { Link } from 'react-router-dom';
 
-// Sample word search puzzles
-const WORD_SEARCH_PUZZLES = [
-  {
-    grid: [
-      ['G', 'A', 'M', 'E', 'S', 'P', 'L', 'A', 'Y'],
-      ['A', 'R', 'C', 'A', 'D', 'E', 'F', 'U', 'N'],
-      ['M', 'E', 'M', 'O', 'R', 'Y', 'G', 'O', 'O'],
-      ['E', 'T', 'R', 'I', 'S', 'H', 'I', 'T', 'D'],
-      ['S', 'I', 'S', 'N', 'A', 'K', 'E', 'A', 'Y'],
-      ['T', 'C', 'O', 'I', 'N', 'S', 'S', 'C', 'S'],
-      ['E', 'H', 'R', 'E', 'T', 'R', 'O', 'O', 'E'],
-      ['R', 'E', 'S', 'C', 'O', 'R', 'E', 'S', 'R'],
-      ['S', 'T', 'A', 'R', 'T', 'G', 'A', 'M', 'E']
-    ],
-    words: ['GAMES', 'ARCADE', 'MEMORY', 'TETRIS', 'SNAKE', 'COINS', 'RETRO', 'SCORES', 'START']
-  },
-  {
-    grid: [
-      ['P', 'U', 'Z', 'Z', 'L', 'E', 'S', 'O', 'L'],
-      ['A', 'C', 'T', 'I', 'O', 'N', 'A', 'D', 'V'],
-      ['C', 'H', 'A', 'L', 'L', 'E', 'N', 'G', 'E'],
-      ['M', 'A', 'N', 'D', 'E', 'R', 'O', 'I', 'N'],
-        ['A', 'T', 'E', 'R', 'S', 'T', 'A', 'R', 'T'],
-      ['N', 'I', 'N', 'G', 'A', 'M', 'E', 'S', 'E'],
-      ['S', 'T', 'A', 'T', 'E', 'G', 'Y', 'S', 'T'],
-      ['E', 'R', 'T', 'I', 'M', 'E', 'R', 'S', 'E'],
-      ['S', 'T', 'A', 'R', 'T', 'G', 'A', 'M', 'E']
-    ],
-    words: ['PUZZLES', 'ACTION', 'CHALLENGE', 'MANDERIN', 'START', 'GAMES', 'STRATEGY', 'TIMERS']
-  }
+// Word lists for different difficulties
+const WORD_LISTS = {
+  easy: [
+    'CAT', 'DOG', 'BIRD', 'FISH', 'TREE', 'BOOK', 'HOUSE', 'CAR', 'SUN', 'MOON',
+    'STAR', 'CAKE', 'BALL', 'GAME', 'FUN', 'RUN', 'JUMP', 'PLAY', 'EAT', 'SLEEP'
+  ],
+  medium: [
+    'COMPUTER', 'ELEPHANT', 'BUTTERFLY', 'MOUNTAIN', 'OCEAN', 'FOREST', 'LIBRARY',
+    'HOSPITAL', 'UNIVERSITY', 'RESTAURANT', 'AEROPLANE', 'TELEPHONE', 'TELEVISION',
+    'BASKETBALL', 'FOOTBALL', 'BASEBALL', 'SWIMMING', 'READING', 'WRITING', 'DANCING'
+  ],
+  hard: [
+    'PHOTOGRAPHY', 'ASTRONOMY', 'ARCHAEOLOGY', 'PHILOSOPHY', 'MATHEMATICS',
+    'ENGINEERING', 'ARCHITECTURE', 'PSYCHOLOGY', 'BIOLOGY', 'CHEMISTRY',
+    'PHYSICS', 'LITERATURE', 'HISTORY', 'GEOGRAPHY', 'ECONOMICS',
+    'POLITICS', 'SOCIOLOGY', 'ANTHROPOLOGY', 'LINGUISTICS', 'THEOLOGY'
+  ]
+};
+
+// Grid sizes for different difficulties
+const GRID_SIZES = {
+  easy: 12,
+  medium: 16,
+  hard: 20
+};
+
+// Directions for word placement
+const DIRECTIONS = [
+  { dx: 1, dy: 0, name: 'horizontal' },
+  { dx: 0, dy: 1, name: 'vertical' },
+  { dx: 1, dy: 1, name: 'diagonal down-right' },
+  { dx: 1, dy: -1, name: 'diagonal up-right' },
+  { dx: -1, dy: 0, name: 'horizontal backwards' },
+  { dx: 0, dy: -1, name: 'vertical backwards' },
+  { dx: -1, dy: -1, name: 'diagonal up-left' },
+  { dx: -1, dy: 1, name: 'diagonal down-left' }
 ];
 
 function WordSearch() {
-  const [currentPuzzle, setCurrentPuzzle] = useState(0);
+  const [difficulty, setDifficulty] = useState('easy');
   const [grid, setGrid] = useState([]);
   const [words, setWords] = useState([]);
   const [foundWords, setFoundWords] = useState([]);
   const [selectedCells, setSelectedCells] = useState([]);
   const [isSelecting, setIsSelecting] = useState(false);
+  const [startCell, setStartCell] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const [gameWon, setGameWon] = useState(false);
   const [timer, setTimer] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
-  const gridRef = useRef(null);
 
   // Check if device is mobile
   useEffect(() => {
@@ -67,132 +74,189 @@ function WordSearch() {
     return () => clearInterval(interval);
   }, [isRunning]);
 
+  // Generate random letters
+  const generateRandomLetter = () => {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    return letters[Math.floor(Math.random() * letters.length)];
+  };
+
+  // Check if word can be placed
+  const canPlaceWord = (grid, word, startX, startY, direction) => {
+    const { dx, dy } = direction;
+    const length = word.length;
+    
+    for (let i = 0; i < length; i++) {
+      const x = startX + i * dx;
+      const y = startY + i * dy;
+      
+      if (x < 0 || x >= grid[0].length || y < 0 || y >= grid.length) {
+        return false;
+      }
+      
+      if (grid[y][x] !== '' && grid[y][x] !== word[i]) {
+        return false;
+      }
+    }
+    
+    return true;
+  };
+
+  // Place word on grid
+  const placeWord = (grid, word, startX, startY, direction) => {
+    const { dx, dy } = direction;
+    const newGrid = grid.map(row => [...row]);
+    
+    for (let i = 0; i < word.length; i++) {
+      const x = startX + i * dx;
+      const y = startY + i * dy;
+      newGrid[y][x] = word[i];
+    }
+    
+    return newGrid;
+  };
+
+  // Generate word search grid
+  const generateGrid = useCallback((difficulty) => {
+    const size = GRID_SIZES[difficulty];
+    const wordList = WORD_LISTS[difficulty];
+    const numWords = Math.min(8, wordList.length); // Use 8 words per game
+    
+    // Select random words
+    const selectedWords = [];
+    const shuffledWords = [...wordList].sort(() => Math.random() - 0.5);
+    for (let i = 0; i < numWords; i++) {
+      selectedWords.push(shuffledWords[i]);
+    }
+    
+    // Initialize empty grid
+    let grid = Array(size).fill().map(() => Array(size).fill(''));
+    
+    // Place words
+    const placedWords = [];
+    for (const word of selectedWords) {
+      let placed = false;
+      let attempts = 0;
+      const maxAttempts = 100;
+      
+      while (!placed && attempts < maxAttempts) {
+        const direction = DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
+        const startX = Math.floor(Math.random() * size);
+        const startY = Math.floor(Math.random() * size);
+        
+        if (canPlaceWord(grid, word, startX, startY, direction)) {
+          grid = placeWord(grid, word, startX, startY, direction);
+          placedWords.push({
+            word,
+            startX,
+            startY,
+            direction,
+            found: false
+          });
+          placed = true;
+        }
+        attempts++;
+      }
+    }
+    
+    // Fill remaining cells with random letters
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        if (grid[y][x] === '') {
+          grid[y][x] = generateRandomLetter();
+        }
+      }
+    }
+    
+    return { grid, words: placedWords };
+  }, []);
+
   // Initialize game
-  const initializeGame = (puzzleIndex = 0) => {
-    const puzzle = WORD_SEARCH_PUZZLES[puzzleIndex];
-    setGrid(puzzle.grid);
-    setWords(puzzle.words);
+  const initializeGame = (newDifficulty = difficulty) => {
+    const { grid: newGrid, words: newWords } = generateGrid(newDifficulty);
+    setGrid(newGrid);
+    setWords(newWords);
     setFoundWords([]);
     setSelectedCells([]);
     setIsSelecting(false);
+    setStartCell(null);
     setGameWon(false);
     setTimer(0);
     setIsRunning(true);
     soundManager.buttonClick();
   };
 
-  // Get cell coordinates from event
-  const getCellCoordinates = (event) => {
-    const rect = gridRef.current.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    const cellSize = rect.width / 9;
-    const col = Math.floor(x / cellSize);
-    const row = Math.floor(y / cellSize);
-    return { row, col };
-  };
-
-  // Handle mouse/touch down
-  const handlePointerDown = (event) => {
-    if (!isRunning || gameWon) return;
+  // Check if selected cells form a word
+  const checkWord = useCallback((cells) => {
+    if (cells.length < 3) return; // Minimum word length
     
-    const { row, col } = getCellCoordinates(event);
-    if (row >= 0 && row < 9 && col >= 0 && col < 9) {
-      setIsSelecting(true);
-      setSelectedCells([{ row, col }]);
-      soundManager.wordSearchSelect();
-    }
-  };
-
-  // Handle mouse/touch move
-  const handlePointerMove = (event) => {
-    if (!isSelecting || !isRunning || gameWon) return;
+    const selectedWord = cells.map(cell => grid[cell.y][cell.x]).join('');
     
-    const { row, col } = getCellCoordinates(event);
-    if (row >= 0 && row < 9 && col >= 0 && col < 9) {
-      const lastCell = selectedCells[selectedCells.length - 1];
-      if (lastCell.row !== row || lastCell.col !== col) {
-        setSelectedCells(prev => [...prev, { row, col }]);
-      }
-    }
-  };
-
-  // Handle mouse/touch up
-  const handlePointerUp = () => {
-    if (!isSelecting || !isRunning || gameWon) return;
-    
-    setIsSelecting(false);
-    
-    if (selectedCells.length < 2) {
-      setSelectedCells([]);
-      return;
-    }
-    
-    // Check if selected cells form a word
-    const word = selectedCells.map(cell => grid[cell.row][cell.col]).join('');
-    const reversedWord = word.split('').reverse().join('');
-    
-    if (words.includes(word) && !foundWords.includes(word)) {
-      setFoundWords(prev => [...prev, word]);
-      soundManager.wordSearchFound();
-      
-      // Check if all words are found
-      if (foundWords.length + 1 === words.length) {
-        setGameWon(true);
-        setIsRunning(false);
+    for (const wordInfo of words) {
+      if (wordInfo.word === selectedWord && !wordInfo.found) {
+        // Mark word as found
+        const updatedWords = words.map(w => 
+          w.word === selectedWord ? { ...w, found: true } : w
+        );
+        setWords(updatedWords);
+        setFoundWords(prev => [...prev, selectedWord]);
         soundManager.wordSearchFound();
-      }
-    } else if (words.includes(reversedWord) && !foundWords.includes(reversedWord)) {
-      setFoundWords(prev => [...prev, reversedWord]);
-      soundManager.wordSearchFound();
-      
-      // Check if all words are found
-      if (foundWords.length + 1 === words.length) {
-        setGameWon(true);
-        setIsRunning(false);
-        soundManager.wordSearchFound();
-      }
-    }
-    
-    setSelectedCells([]);
-  };
-
-  // Check if cell is in selected path
-  const isCellSelected = (row, col) => {
-    return selectedCells.some(cell => cell.row === row && cell.col === col);
-  };
-
-  // Check if cell is in found word
-  const isCellFound = (row, col) => {
-    return foundWords.some(word => {
-      // Check if this cell is part of any found word
-      for (let i = 0; i < 9; i++) {
-        for (let j = 0; j < 9; j++) {
-          // Check horizontal
-          if (j + word.length <= 9) {
-            const horizontalWord = grid[i].slice(j, j + word.length).join('');
-            if (horizontalWord === word && i === row && col >= j && col < j + word.length) {
-              return true;
-            }
-          }
-          // Check vertical
-          if (i + word.length <= 9) {
-            const verticalWord = Array.from({ length: word.length }, (_, k) => grid[i + k][j]).join('');
-            if (verticalWord === word && j === col && row >= i && row < i + word.length) {
-              return true;
-            }
-          }
-          // Check diagonal
-          if (i + word.length <= 9 && j + word.length <= 9) {
-            const diagonalWord = Array.from({ length: word.length }, (_, k) => grid[i + k][j + k]).join('');
-            if (diagonalWord === word && row >= i && row < i + word.length && col >= j && col < j + word.length && row - i === col - j) {
-              return true;
-            }
-          }
+        
+        // Check if all words are found
+        if (updatedWords.every(w => w.found)) {
+          setGameWon(true);
+          setIsRunning(false);
+          soundManager.sudokuComplete(); // Reuse completion sound
         }
+        return;
       }
-      return false;
-    });
+    }
+  }, [grid, words]);
+
+  // Handle cell selection
+  const handleCellClick = (x, y) => {
+    if (gameWon) return;
+    
+    if (!isSelecting) {
+      setStartCell({ x, y });
+      setIsSelecting(true);
+      setSelectedCells([{ x, y }]);
+      soundManager.wordSearchSelect();
+    } else {
+      // End selection
+      setIsSelecting(false);
+      checkWord(selectedCells);
+      setSelectedCells([]);
+      setStartCell(null);
+    }
+  };
+
+  // Handle cell hover (for desktop)
+  const handleCellHover = (x, y) => {
+    if (!isSelecting || !startCell) return;
+    
+    const cells = [];
+    const dx = x - startCell.x;
+    const dy = y - startCell.y;
+    
+    if (dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy)) {
+      const steps = Math.max(Math.abs(dx), Math.abs(dy)) + 1;
+      const stepX = dx / (steps - 1);
+      const stepY = dy / (steps - 1);
+      
+      for (let i = 0; i < steps; i++) {
+        const cellX = startCell.x + i * stepX;
+        const cellY = startCell.y + i * stepY;
+        cells.push({ x: cellX, y: cellY });
+      }
+      
+      setSelectedCells(cells);
+    }
+  };
+
+  // Handle difficulty change
+  const handleDifficultyChange = (newDifficulty) => {
+    setDifficulty(newDifficulty);
+    initializeGame(newDifficulty);
   };
 
   // Format time
@@ -222,101 +286,133 @@ function WordSearch() {
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <h2 style={{ fontFamily: 'monospace', color: '#00ff00', textShadow: '2px 2px #000' }}>Word Search</h2>
       
-      {/* Game Stats */}
-      <div style={{ 
-        display: 'flex', 
-        gap: 20, 
-        marginBottom: 16,
-        color: '#0f0',
-        fontFamily: 'monospace',
-        fontSize: '1rem'
-      }}>
-        <div>Time: {formatTime(timer)}</div>
-        <div>Found: {foundWords.length}/{words.length}</div>
-        <div>Puzzle: {currentPuzzle + 1}/{WORD_SEARCH_PUZZLES.length}</div>
+      {/* Difficulty Selector */}
+      <div style={{ marginBottom: 16 }}>
+        <button
+          onClick={() => handleDifficultyChange('easy')}
+          style={{
+            fontFamily: 'monospace',
+            fontSize: '1rem',
+            background: difficulty === 'easy' ? '#0f0' : '#222',
+            color: difficulty === 'easy' ? '#000' : '#0f0',
+            border: '2px solid #0f0',
+            padding: '8px 16px',
+            cursor: 'pointer',
+            marginRight: 8
+          }}
+        >
+          Easy
+        </button>
+        <button
+          onClick={() => handleDifficultyChange('medium')}
+          style={{
+            fontFamily: 'monospace',
+            fontSize: '1rem',
+            background: difficulty === 'medium' ? '#0f0' : '#222',
+            color: difficulty === 'medium' ? '#000' : '#0f0',
+            border: '2px solid #0f0',
+            padding: '8px 16px',
+            cursor: 'pointer',
+            marginRight: 8
+          }}
+        >
+          Medium
+        </button>
+        <button
+          onClick={() => handleDifficultyChange('hard')}
+          style={{
+            fontFamily: 'monospace',
+            fontSize: '1rem',
+            background: difficulty === 'hard' ? '#0f0' : '#222',
+            color: difficulty === 'hard' ? '#000' : '#0f0',
+            border: '2px solid #0f0',
+            padding: '8px 16px',
+            cursor: 'pointer'
+          }}
+        >
+          Hard
+        </button>
       </div>
 
-      {/* Word Grid */}
-      <div
-        ref={gridRef}
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(9, 1fr)',
-          gap: 2,
-          background: '#0f0',
-          padding: 4,
-          marginBottom: 16,
-          cursor: 'crosshair',
-          userSelect: 'none',
-          touchAction: 'none'
-        }}
-        onMouseDown={handlePointerDown}
-        onMouseMove={handlePointerMove}
-        onMouseUp={handlePointerUp}
-        onTouchStart={handlePointerDown}
-        onTouchMove={handlePointerMove}
-        onTouchEnd={handlePointerUp}
-      >
-        {grid.map((row, rowIndex) =>
-          row.map((cell, colIndex) => (
-            <div
-              key={`${rowIndex}-${colIndex}`}
-              style={{
-                width: isMobile ? 35 : 45,
-                height: isMobile ? 35 : 45,
-                background: isCellFound(rowIndex, colIndex)
-                  ? '#0f0'
-                  : isCellSelected(rowIndex, colIndex)
-                    ? '#333'
-                    : '#111',
-                color: isCellFound(rowIndex, colIndex) ? '#000' : '#0f0',
-                border: '1px solid #0f0',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: 'monospace',
-                fontSize: isMobile ? '0.8rem' : '1rem',
-                fontWeight: 'bold',
-                cursor: 'crosshair'
-              }}
-            >
-              {cell}
-            </div>
-          ))
-        )}
+      {/* Timer and Progress */}
+      <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 16, textAlign: 'center' }}>
+        <div>Time: {formatTime(timer)}</div>
+        <div>Found: {foundWords.length} / {words.length}</div>
       </div>
 
       {/* Word List */}
       <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(3, 1fr)', 
+        display: 'flex', 
+        flexWrap: 'wrap', 
         gap: 8, 
         marginBottom: 16,
-        maxWidth: '100%'
+        maxWidth: '600px',
+        justifyContent: 'center'
       }}>
-        {words.map(word => (
-          <div
-            key={word}
+        {words.map((wordInfo, index) => (
+          <span
+            key={index}
             style={{
-              padding: '4px 8px',
-              background: foundWords.includes(word) ? '#0f0' : '#111',
-              color: foundWords.includes(word) ? '#000' : '#0f0',
-              border: '1px solid #0f0',
               fontFamily: 'monospace',
-              fontSize: isMobile ? '0.8rem' : '1rem',
-              textAlign: 'center',
-              textDecoration: foundWords.includes(word) ? 'line-through' : 'none'
+              fontSize: '0.9rem',
+              color: wordInfo.found ? '#888' : '#0f0',
+              textDecoration: wordInfo.found ? 'line-through' : 'none',
+              padding: '4px 8px',
+              border: '1px solid #0f0',
+              borderRadius: '4px'
             }}
           >
-            {word}
-          </div>
+            {wordInfo.word}
+          </span>
         ))}
+      </div>
+
+      {/* Word Search Grid */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: `repeat(${grid[0]?.length || 12}, 1fr)`, 
+        gap: 1, 
+        background: '#0f0', 
+        padding: 4,
+        marginBottom: 16,
+        maxWidth: '100%',
+        overflow: 'auto'
+      }}>
+        {grid.map((row, rowIndex) => 
+          row.map((cell, colIndex) => {
+            const isSelected = selectedCells.some(c => c.x === colIndex && c.y === rowIndex);
+            return (
+              <div
+                key={`${rowIndex}-${colIndex}`}
+                onClick={() => handleCellClick(colIndex, rowIndex)}
+                onMouseEnter={() => handleCellHover(colIndex, rowIndex)}
+                style={{
+                  width: isMobile ? 25 : 35,
+                  height: isMobile ? 25 : 35,
+                  background: isSelected ? '#0f0' : '#111',
+                  color: isSelected ? '#000' : '#0f0',
+                  border: '1px solid #0f0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: 'monospace',
+                  fontSize: isMobile ? '0.7rem' : '0.9rem',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  userSelect: 'none'
+                }}
+              >
+                {cell}
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* Control Buttons */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
         <button
-          onClick={() => initializeGame(currentPuzzle)}
+          onClick={() => initializeGame()}
           style={{
             fontFamily: 'monospace',
             fontSize: '1rem',
@@ -329,24 +425,6 @@ function WordSearch() {
         >
           New Game
         </button>
-        <button
-          onClick={() => {
-            const nextPuzzle = (currentPuzzle + 1) % WORD_SEARCH_PUZZLES.length;
-            setCurrentPuzzle(nextPuzzle);
-            initializeGame(nextPuzzle);
-          }}
-          style={{
-            fontFamily: 'monospace',
-            fontSize: '1rem',
-            background: '#222',
-            color: '#0f0',
-            border: '2px solid #0f0',
-            padding: '8px 16px',
-            cursor: 'pointer'
-          }}
-        >
-          Next Puzzle
-        </button>
       </div>
 
       {/* Win Message */}
@@ -358,11 +436,17 @@ function WordSearch() {
           marginBottom: 16,
           textAlign: 'center'
         }}>
-          🎉 Word Master! 🎉
-          <br />
-          Completed in {formatTime(timer)}
+          🎉 Congratulations! You found all the words! 🎉
         </div>
       )}
+
+      {/* Instructions */}
+      <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8, textAlign: 'center', maxWidth: '600px' }}>
+        {isMobile ? 
+          'Tap cells to select words. Tap again to confirm selection.' :
+          'Click and drag to select words. Words can be horizontal, vertical, or diagonal.'
+        }
+      </div>
 
       {/* Fullscreen Button */}
       <button
@@ -378,7 +462,7 @@ function WordSearch() {
           border: '3px solid #0f0',
           padding: '12px 24px',
           cursor: 'pointer',
-          marginTop: 12,
+          marginTop: 16,
           marginBottom: 8,
           touchAction: 'manipulation',
           boxShadow: '0 0 10px #0f0',

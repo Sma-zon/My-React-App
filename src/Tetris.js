@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import soundManager from './sounds';
 import { Link } from 'react-router-dom';
 
@@ -17,13 +17,26 @@ const SHAPES = [
   [[6, 6, 0], [0, 6, 6]], // S
   [[0, 7, 7], [7, 7, 0]] // Z
 ];
+
 function randomPiece() {
   const type = Math.floor(Math.random() * (SHAPES.length - 1)) + 1;
   return { type, shape: SHAPES[type], x: 3, y: 0 };
 }
+
 function rotate(shape) {
-  return shape[0].map((_, i) => shape.map(row => row[i]).reverse());
+  const rows = shape.length;
+  const cols = shape[0].length;
+  const rotated = Array(cols).fill().map(() => Array(rows).fill(0));
+  
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      rotated[c][rows - 1 - r] = shape[r][c];
+    }
+  }
+  
+  return rotated;
 }
+
 function canMove(board, piece, dx, dy, newShape) {
   const shape = newShape || piece.shape;
   for (let y = 0; y < shape.length; y++) {
@@ -37,6 +50,7 @@ function canMove(board, piece, dx, dy, newShape) {
   }
   return true;
 }
+
 function merge(board, piece) {
   const newBoard = board.map(row => [...row]);
   for (let y = 0; y < piece.shape.length; y++) {
@@ -50,6 +64,7 @@ function merge(board, piece) {
   }
   return newBoard;
 }
+
 function clearLines(board) {
   let lines = 0;
   const newBoard = board.filter(row => !row.every(cell => cell)).map(row => [...row]);
@@ -66,6 +81,7 @@ function Tetris() {
   const [running, setRunning] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const interval = useRef();
+  const dropTime = useRef(0);
 
   // Check if device is mobile
   useEffect(() => {
@@ -77,10 +93,11 @@ function Tetris() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Keyboard controls
   useEffect(() => {
-    if (!running) return;
     function handleKeyDown(e) {
-      if (gameOver) return;
+      if (!running || gameOver) return;
+      
       if (e.key.toLowerCase() === 'a' && canMove(board, piece, -1, 0)) {
         soundManager.tetrisMove();
         setPiece(p => ({ ...p, x: p.x - 1 }));
@@ -92,6 +109,7 @@ function Tetris() {
       if (e.key.toLowerCase() === 's' && canMove(board, piece, 0, 1)) {
         soundManager.tetrisMove();
         setPiece(p => ({ ...p, y: p.y + 1 }));
+        dropTime.current = 0; // Reset drop timer
       }
       if (e.key.toLowerCase() === 'w') {
         const rotated = rotate(piece.shape);
@@ -101,39 +119,61 @@ function Tetris() {
         }
       }
     }
+    
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [board, piece, gameOver, running]);
 
+  // Game loop
   useEffect(() => {
     if (!running) return;
-    interval.current = setInterval(() => {
-      if (canMove(board, piece, 0, 1)) {
-        setPiece(p => ({ ...p, y: p.y + 1 }));
-      } else {
-        const merged = merge(board, piece);
-        const { board: cleared, lines } = clearLines(merged);
-        if (lines > 0) {
-          soundManager.tetrisLineClear();
-        }
-        setScore(s => s + lines * 100);
-        const next = randomPiece();
-        if (!canMove(cleared, next, 0, 0)) {
-          soundManager.tetrisGameOver();
-          setGameOver(true);
-          setBoard(cleared);
+    
+    const gameLoop = () => {
+      dropTime.current += 16; // 60 FPS
+      
+      if (dropTime.current >= 350) {
+        dropTime.current = 0;
+        
+        if (canMove(board, piece, 0, 1)) {
+          setPiece(p => ({ ...p, y: p.y + 1 }));
         } else {
-          setBoard(cleared);
-          setPiece(next);
+          const merged = merge(board, piece);
+          const { board: cleared, lines } = clearLines(merged);
+          
+          if (lines > 0) {
+            soundManager.tetrisLineClear();
+          }
+          
+          setScore(s => s + lines * 100);
+          const next = randomPiece();
+          
+          if (!canMove(cleared, next, 0, 0)) {
+            soundManager.tetrisGameOver();
+            setGameOver(true);
+            setBoard(cleared);
+          } else {
+            setBoard(cleared);
+            setPiece(next);
+          }
         }
       }
-    }, 350);
-    return () => clearInterval(interval.current);
+      
+      interval.current = requestAnimationFrame(gameLoop);
+    };
+    
+    interval.current = requestAnimationFrame(gameLoop);
+    
+    return () => {
+      if (interval.current) {
+        cancelAnimationFrame(interval.current);
+      }
+    };
   }, [board, piece, gameOver, running]);
 
   // Touch controls
-  const handleTouchMove = (direction) => {
+  const handleTouchMove = useCallback((direction) => {
     if (!running || gameOver) return;
+    
     if (direction === 'left' && canMove(board, piece, -1, 0)) {
       soundManager.tetrisMove();
       setPiece(p => ({ ...p, x: p.x - 1 }));
@@ -143,6 +183,7 @@ function Tetris() {
     } else if (direction === 'down' && canMove(board, piece, 0, 1)) {
       soundManager.tetrisMove();
       setPiece(p => ({ ...p, y: p.y + 1 }));
+      dropTime.current = 0;
     } else if (direction === 'rotate') {
       const rotated = rotate(piece.shape);
       if (canMove(board, piece, 0, 0, rotated)) {
@@ -150,7 +191,7 @@ function Tetris() {
         setPiece(p => ({ ...p, shape: rotated }));
       }
     }
-  };
+  }, [board, piece, gameOver, running]);
 
   // Fullscreen functionality
   const handleFullscreen = () => {
@@ -170,7 +211,17 @@ function Tetris() {
     setScore(0);
     setGameOver(false);
     setRunning(true);
+    dropTime.current = 0;
   }
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (interval.current) {
+        cancelAnimationFrame(interval.current);
+      }
+    };
+  }, []);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import soundManager from './sounds';
 import { Link } from 'react-router-dom';
 
@@ -27,16 +27,21 @@ function calculateWinner(board) {
 function TicTacToe() {
   const [board, setBoard] = useState([...INIT_BOARD]);
   const [xIsNext, setXIsNext] = useState(true);
+  const [gameHistory, setGameHistory] = useState([]);
   const winner = calculateWinner(board);
   const isDraw = !winner && board.every(Boolean);
 
   const handleClick = (index) => {
-    if (board[index] || winner) return;
+    if (board[index] || winner || isDraw) return;
+    
     soundManager.ticTacToeClick();
     const newBoard = [...board];
     newBoard[index] = xIsNext ? 'X' : 'O';
     setBoard(newBoard);
     setXIsNext(!xIsNext);
+    
+    // Add to history
+    setGameHistory(prev => [...prev, { board: [...newBoard], player: xIsNext ? 'X' : 'O' }]);
   };
 
   // Fullscreen functionality
@@ -54,7 +59,32 @@ function TicTacToe() {
     soundManager.buttonClick();
     setBoard([...INIT_BOARD]);
     setXIsNext(true);
+    setGameHistory([]);
   };
+
+  const undoMove = () => {
+    if (gameHistory.length === 0) return;
+    
+    soundManager.buttonClick();
+    const newHistory = gameHistory.slice(0, -1);
+    setGameHistory(newHistory);
+    
+    if (newHistory.length === 0) {
+      setBoard([...INIT_BOARD]);
+      setXIsNext(true);
+    } else {
+      const lastMove = newHistory[newHistory.length - 1];
+      setBoard(lastMove.board);
+      setXIsNext(lastMove.player === 'O'); // Next player is opposite of last player
+    }
+  };
+
+  // Check for win after each move
+  useEffect(() => {
+    if (winner) {
+      soundManager.ticTacToeWin();
+    }
+  }, [winner]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -106,11 +136,18 @@ function TicTacToe() {
       <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>
         {winner ? `Winner: ${winner}` : isDraw ? 'Draw!' : `Next: ${xIsNext ? 'X' : 'O'}`}
       </div>
-      {(winner || isDraw) && (
-        <button onClick={resetGame} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
-          Restart
-        </button>
-      )}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        {gameHistory.length > 0 && !winner && !isDraw && (
+          <button onClick={undoMove} style={{ fontFamily: 'monospace', fontSize: '1rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '6px 12px', cursor: 'pointer' }}>
+            Undo
+          </button>
+        )}
+        {(winner || isDraw) && (
+          <button onClick={resetGame} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
+            Restart
+          </button>
+        )}
+      </div>
       <button onClick={() => {
         soundManager.buttonClick();
         handleFullscreen();

@@ -171,14 +171,29 @@ function Minesweeper() {
     newRevealed[row][col] = true;
     soundManager.minesweeperReveal();
     
-    // If it's a 0, reveal neighbors
+    // If it's a 0, reveal neighbors using a queue to avoid stack overflow
     if (board[row][col] === 0) {
-      for (let dr = -1; dr <= 1; dr++) {
-        for (let dc = -1; dc <= 1; dc++) {
-          const nr = row + dr;
-          const nc = col + dc;
-          if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE && !newRevealed[nr][nc] && !flagged[nr][nc]) {
-            revealCell(nr, nc);
+      const queue = [[row, col]];
+      
+      while (queue.length > 0) {
+        const [currentRow, currentCol] = queue.shift();
+        
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            const nr = currentRow + dr;
+            const nc = currentCol + dc;
+            
+            if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE && 
+                !newRevealed[nr][nc] && !flagged[nr][nc]) {
+              
+              newRevealed[nr][nc] = true;
+              soundManager.minesweeperReveal();
+              
+              // If this neighbor is also 0, add it to the queue
+              if (board[nr][nc] === 0) {
+                queue.push([nr, nc]);
+              }
+            }
           }
         }
       }

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import soundManager from './sounds';
 import { Link } from 'react-router-dom';
 
@@ -26,6 +26,7 @@ function Snake() {
     alive: true,
     pendingDir: null
   });
+  const animationRef = useRef(null);
 
   // Check if device is mobile
   useEffect(() => {
@@ -37,13 +38,17 @@ function Snake() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Keyboard controls
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (!running || !gameRef.current.alive) return;
+      
       let d = null;
       if (e.key.toLowerCase() === 'w') d = { x: 0, y: -1 };
       if (e.key.toLowerCase() === 's') d = { x: 0, y: 1 };
       if (e.key.toLowerCase() === 'a') d = { x: -1, y: 0 };
       if (e.key.toLowerCase() === 'd') d = { x: 1, y: 0 };
+      
       if (d) {
         // Prevent reversing
         const { x, y } = gameRef.current.dir;
@@ -52,17 +57,21 @@ function Snake() {
         }
       }
     };
+    
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [running]);
 
   // Touch controls
-  const handleTouchDirection = (direction) => {
+  const handleTouchDirection = useCallback((direction) => {
+    if (!running || !gameRef.current.alive) return;
+    
     let d = null;
     if (direction === 'up') d = { x: 0, y: -1 };
     if (direction === 'down') d = { x: 0, y: 1 };
     if (direction === 'left') d = { x: -1, y: 0 };
     if (direction === 'right') d = { x: 1, y: 0 };
+    
     if (d) {
       // Prevent reversing
       const { x, y } = gameRef.current.dir;
@@ -70,7 +79,7 @@ function Snake() {
         gameRef.current.pendingDir = d;
       }
     }
-  };
+  }, [running]);
 
   // Fullscreen functionality
   const handleFullscreen = () => {
@@ -83,26 +92,33 @@ function Snake() {
     }
   };
 
+  // Game loop
   useEffect(() => {
     if (!running) return;
+    
     const ctx = canvasRef.current.getContext('2d');
-    let intervalId;
+    
     function draw() {
+      // Clear canvas
       ctx.fillStyle = '#111';
       ctx.fillRect(0, 0, WIDTH, HEIGHT);
+      
       // Draw food
       ctx.fillStyle = '#ff0';
       ctx.fillRect(gameRef.current.food.x * SCALE, gameRef.current.food.y * SCALE, SCALE, SCALE);
+      
       // Draw snake
       ctx.fillStyle = '#0f0';
       for (const s of gameRef.current.snake) {
         ctx.fillRect(s.x * SCALE, s.y * SCALE, SCALE, SCALE);
       }
+      
       // Score
       ctx.font = '20px monospace';
       ctx.fillStyle = '#0f0';
       ctx.textAlign = 'left';
       ctx.fillText('Score: ' + score, 10, 30);
+      
       if (!gameRef.current.alive) {
         ctx.font = '32px monospace';
         ctx.fillStyle = '#f00';
@@ -110,23 +126,29 @@ function Snake() {
         ctx.fillText('Game Over', WIDTH / 2, HEIGHT / 2);
       }
     }
+    
     function update() {
       if (!gameRef.current.alive) return;
+      
       // Direction update
       if (gameRef.current.pendingDir) {
         gameRef.current.dir = gameRef.current.pendingDir;
         gameRef.current.pendingDir = null;
       }
+      
       const head = { ...gameRef.current.snake[0] };
       head.x += gameRef.current.dir.x;
       head.y += gameRef.current.dir.y;
+      
       // Wall wrapping
       if (head.x < 0) head.x = COLS - 1;
       if (head.x >= COLS) head.x = 0;
       if (head.y < 0) head.y = ROWS - 1;
       if (head.y >= ROWS) head.y = 0;
-      // Self collision
-      for (const s of gameRef.current.snake) {
+      
+      // Self collision - check against all body parts except the tail (which will move)
+      for (let i = 0; i < gameRef.current.snake.length - 1; i++) {
+        const s = gameRef.current.snake[i];
         if (s.x === head.x && s.y === head.y) {
           soundManager.snakeGameOver();
           gameRef.current.alive = false;
@@ -134,12 +156,14 @@ function Snake() {
           return;
         }
       }
+      
       // Food collision
       let ate = false;
       if (head.x === gameRef.current.food.x && head.y === gameRef.current.food.y) {
         ate = true;
         soundManager.snakeEat();
         setScore((s) => s + 1);
+        
         // Place new food
         let newFood;
         do {
@@ -150,18 +174,27 @@ function Snake() {
         } while (gameRef.current.snake.some((s) => s.x === newFood.x && s.y === newFood.y));
         gameRef.current.food = newFood;
       }
+      
       // Move snake
       gameRef.current.snake.unshift(head);
       if (!ate) {
         gameRef.current.snake.pop();
       }
     }
+    
     function gameLoop() {
       update();
       draw();
+      animationRef.current = requestAnimationFrame(gameLoop);
     }
-    intervalId = setInterval(gameLoop, 100);
-    return () => clearInterval(intervalId);
+    
+    animationRef.current = requestAnimationFrame(gameLoop);
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
   }, [score, running]);
 
   function handleStart() {
@@ -173,6 +206,15 @@ function Snake() {
     setScore(0);
     setRunning(true);
   }
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

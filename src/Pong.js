@@ -114,6 +114,7 @@ function Pong() {
   useEffect(() => {
     let animationId;
     const ctx = canvasRef.current.getContext('2d');
+    
     function draw() {
       // Clear canvas
       ctx.fillStyle = '#111';
@@ -206,6 +207,7 @@ function Pong() {
       ctx.fillText(gameRef.current.leftScore, WIDTH / 4, 40);
       ctx.fillText(gameRef.current.rightScore, WIDTH * 3 / 4, 40);
     }
+    
     function update() {
       // Update particles
       gameRef.current.particles = gameRef.current.particles.filter(particle => {
@@ -246,35 +248,44 @@ function Pong() {
         gameRef.current.leftY = aiMove(gameRef.current.leftY, gameRef.current.ballY + BALL_SIZE / 2);
         gameRef.current.rightY = aiMove(gameRef.current.rightY, gameRef.current.ballY + BALL_SIZE / 2);
       }
+      
       // Move ball
       gameRef.current.ballX += gameRef.current.ballVX;
       gameRef.current.ballY += gameRef.current.ballVY;
+      
       // Collisions with top/bottom
       if (gameRef.current.ballY <= 0 || gameRef.current.ballY + BALL_SIZE >= HEIGHT) {
         gameRef.current.ballVY *= -1;
+        gameRef.current.ballY = Math.max(0, Math.min(HEIGHT - BALL_SIZE, gameRef.current.ballY));
       }
+      
       // Collisions with paddles
       let hit = false;
+      
       // Left paddle
       if (
         gameRef.current.ballX <= PADDLE_WIDTH &&
         gameRef.current.ballY + BALL_SIZE >= gameRef.current.leftY &&
-        gameRef.current.ballY <= gameRef.current.leftY + PADDLE_HEIGHT
+        gameRef.current.ballY <= gameRef.current.leftY + PADDLE_HEIGHT &&
+        gameRef.current.ballVX < 0
       ) {
-        gameRef.current.ballVX = Math.sign(gameRef.current.ballVX) * gameRef.current.ballSpeed * -1;
+        gameRef.current.ballVX = Math.abs(gameRef.current.ballVX);
         gameRef.current.ballX = PADDLE_WIDTH; // Prevent sticking
         hit = true;
       }
+      
       // Right paddle
       if (
         gameRef.current.ballX + BALL_SIZE >= WIDTH - PADDLE_WIDTH &&
         gameRef.current.ballY + BALL_SIZE >= gameRef.current.rightY &&
-        gameRef.current.ballY <= gameRef.current.rightY + PADDLE_HEIGHT
+        gameRef.current.ballY <= gameRef.current.rightY + PADDLE_HEIGHT &&
+        gameRef.current.ballVX > 0
       ) {
-        gameRef.current.ballVX = Math.sign(gameRef.current.ballVX) * gameRef.current.ballSpeed * -1;
+        gameRef.current.ballVX = -Math.abs(gameRef.current.ballVX);
         gameRef.current.ballX = WIDTH - PADDLE_WIDTH - BALL_SIZE; // Prevent sticking
         hit = true;
       }
+      
       if (hit) {
         soundManager.pongHit();
         gameRef.current.hitCount = (gameRef.current.hitCount || 0) + 1;
@@ -296,6 +307,7 @@ function Pong() {
           });
         }
       }
+      
       // Score
       if (gameRef.current.ballX < 0) {
         soundManager.pongScore();
@@ -307,6 +319,7 @@ function Pong() {
         resetBall(1);
       }
     }
+    
     function resetBall(dir) {
       gameRef.current.ballX = WIDTH / 2 - BALL_SIZE / 2;
       gameRef.current.ballY = HEIGHT / 2 - BALL_SIZE / 2;
@@ -316,14 +329,21 @@ function Pong() {
       gameRef.current.ballSpeed = BALL_SPEED;
       setBallSpeed(BALL_SPEED);
     }
+    
     function loop() {
       update();
       draw();
       animationId = requestAnimationFrame(loop);
     }
+    
     loop();
-    return () => cancelAnimationFrame(animationId);
-  }, [mode]);
+    
+    return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    };
+  }, [mode, modeName]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
