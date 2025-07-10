@@ -28,18 +28,29 @@ function TicTacToe() {
   const winner = calculateWinner(board);
   const isDraw = !winner && board.every(Boolean);
 
-  function handleClick(idx) {
-    if (board[idx] || winner) return;
+  const handleClick = (index) => {
+    if (board[index] || winner) return;
     const newBoard = [...board];
-    newBoard[idx] = xIsNext ? 'X' : 'O';
+    newBoard[index] = xIsNext ? 'X' : 'O';
     setBoard(newBoard);
     setXIsNext(!xIsNext);
-  }
+  };
 
-  function handleRestart() {
+  // Fullscreen functionality
+  const handleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.log('Error attempting to enable fullscreen:', err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  const resetGame = () => {
     setBoard([...INIT_BOARD]);
     setXIsNext(true);
-  }
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -76,10 +87,13 @@ function TicTacToe() {
         {winner ? `Winner: ${winner}` : isDraw ? 'Draw!' : `Next: ${xIsNext ? 'X' : 'O'}`}
       </div>
       {(winner || isDraw) && (
-        <button onClick={handleRestart} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
+        <button onClick={resetGame} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
           Restart
         </button>
       )}
+      <button onClick={handleFullscreen} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
+        {document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}
+      </button>
     </div>
   );
 }

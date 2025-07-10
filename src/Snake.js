@@ -70,6 +70,17 @@ function Snake() {
     }
   };
 
+  // Fullscreen functionality
+  const handleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.log('Error attempting to enable fullscreen:', err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
   useEffect(() => {
     if (!running) return;
     const ctx = canvasRef.current.getContext('2d');
@@ -177,28 +188,48 @@ function Snake() {
         </button>
       )}
       
+      {/* Fullscreen Button */}
+      <button
+        onClick={handleFullscreen}
+        style={{
+          fontFamily: 'monospace',
+          fontSize: '1rem',
+          background: '#222',
+          color: '#0f0',
+          border: '2px solid #0f0',
+          padding: '8px 16px',
+          cursor: 'pointer',
+          marginTop: 8,
+          touchAction: 'manipulation'
+        }}
+      >
+        {document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}
+      </button>
+      
       {/* Touch Controls for Mobile */}
       {isMobile && running && gameRef.current.alive && (
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(3, 1fr)', 
-          gap: 8, 
-          marginTop: 16,
-          width: 200
+          gap: 15, 
+          marginTop: 20,
+          width: 280,
+          padding: '0 20px'
         }}>
           <div></div>
           <button
             onClick={() => handleTouchDirection('up')}
             style={{
-              width: 60,
-              height: 60,
-              fontSize: '1.5rem',
+              width: 80,
+              height: 80,
+              fontSize: '2rem',
               background: '#222',
               color: '#0f0',
-              border: '2px solid #0f0',
+              border: '3px solid #0f0',
               borderRadius: '50%',
               cursor: 'pointer',
-              fontFamily: 'monospace'
+              fontFamily: 'monospace',
+              touchAction: 'manipulation'
             }}
           >
             ↑
@@ -208,15 +239,16 @@ function Snake() {
           <button
             onClick={() => handleTouchDirection('left')}
             style={{
-              width: 60,
-              height: 60,
-              fontSize: '1.5rem',
+              width: 80,
+              height: 80,
+              fontSize: '2rem',
               background: '#222',
               color: '#0f0',
-              border: '2px solid #0f0',
+              border: '3px solid #0f0',
               borderRadius: '50%',
               cursor: 'pointer',
-              fontFamily: 'monospace'
+              fontFamily: 'monospace',
+              touchAction: 'manipulation'
             }}
           >
             ←
@@ -225,15 +257,16 @@ function Snake() {
           <button
             onClick={() => handleTouchDirection('right')}
             style={{
-              width: 60,
-              height: 60,
-              fontSize: '1.5rem',
+              width: 80,
+              height: 80,
+              fontSize: '2rem',
               background: '#222',
               color: '#0f0',
-              border: '2px solid #0f0',
+              border: '3px solid #0f0',
               borderRadius: '50%',
               cursor: 'pointer',
-              fontFamily: 'monospace'
+              fontFamily: 'monospace',
+              touchAction: 'manipulation'
             }}
           >
             →
@@ -243,15 +276,16 @@ function Snake() {
           <button
             onClick={() => handleTouchDirection('down')}
             style={{
-              width: 60,
-              height: 60,
-              fontSize: '1.5rem',
+              width: 80,
+              height: 80,
+              fontSize: '2rem',
               background: '#222',
               color: '#0f0',
-              border: '2px solid #0f0',
+              border: '3px solid #0f0',
               borderRadius: '50%',
               cursor: 'pointer',
-              fontFamily: 'monospace'
+              fontFamily: 'monospace',
+              touchAction: 'manipulation'
             }}
           >
             ↓

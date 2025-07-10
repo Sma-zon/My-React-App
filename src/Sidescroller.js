@@ -60,6 +60,17 @@ function Sidescroller() {
     gameRef.current.keys[action] = false;
   };
 
+  // Fullscreen functionality
+  const handleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.log('Error attempting to enable fullscreen:', err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
   useEffect(() => {
     if (!running) return;
     let animationId;
@@ -184,27 +195,30 @@ function Sidescroller() {
         <div style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
-          width: WIDTH, 
-          marginTop: 16,
-          gap: 20
+          width: '100%', 
+          maxWidth: WIDTH,
+          marginTop: 20,
+          padding: '0 20px',
+          gap: 30
         }}>
           {/* Movement Controls */}
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 15 }}>
             <button
               onTouchStart={() => handleTouchStart('left')}
               onTouchEnd={() => handleTouchEnd('left')}
               onMouseDown={() => handleTouchStart('left')}
               onMouseUp={() => handleTouchEnd('left')}
               style={{
-                width: 60,
-                height: 60,
-                fontSize: '1.5rem',
+                width: 80,
+                height: 80,
+                fontSize: '2rem',
                 background: '#222',
                 color: '#0f0',
-                border: '2px solid #0f0',
+                border: '3px solid #0f0',
                 borderRadius: '50%',
                 cursor: 'pointer',
-                fontFamily: 'monospace'
+                fontFamily: 'monospace',
+                touchAction: 'manipulation'
               }}
             >
               ←
@@ -215,15 +229,16 @@ function Sidescroller() {
               onMouseDown={() => handleTouchStart('right')}
               onMouseUp={() => handleTouchEnd('right')}
               style={{
-                width: 60,
-                height: 60,
-                fontSize: '1.5rem',
+                width: 80,
+                height: 80,
+                fontSize: '2rem',
                 background: '#222',
                 color: '#0f0',
-                border: '2px solid #0f0',
+                border: '3px solid #0f0',
                 borderRadius: '50%',
                 cursor: 'pointer',
-                fontFamily: 'monospace'
+                fontFamily: 'monospace',
+                touchAction: 'manipulation'
               }}
             >
               →
@@ -237,21 +252,44 @@ function Sidescroller() {
             onMouseDown={() => handleTouchStart('jump')}
             onMouseUp={() => handleTouchEnd('jump')}
             style={{
-              width: 80,
-              height: 60,
-              fontSize: '1.2rem',
+              width: 100,
+              height: 80,
+              fontSize: '1.5rem',
               background: '#222',
               color: '#0f0',
-              border: '2px solid #0f0',
-              borderRadius: 30,
+              border: '3px solid #0f0',
+              borderRadius: 40,
               cursor: 'pointer',
-              fontFamily: 'monospace'
+              fontFamily: 'monospace',
+              touchAction: 'manipulation'
             }}
           >
             Jump
           </button>
         </div>
       )}
+
+      {/* Fullscreen Button */}
+      <button
+        onClick={handleFullscreen}
+        style={{
+          fontFamily: 'monospace',
+          fontSize: '1rem',
+          background: '#222',
+          color: '#0f0',
+          border: '2px solid #0f0',
+          padding: '8px 16px',
+          cursor: 'pointer',
+          marginTop: 10,
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          margin: 10,
+          zIndex: 10
+        }}
+      >
+        {document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}
+      </button>
     </div>
   );
 }

@@ -95,6 +95,17 @@ function Pong() {
     gameRef.current.keys[paddle + direction] = false;
   };
 
+  // Fullscreen functionality
+  const handleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.log('Error attempting to enable fullscreen:', err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
   useEffect(() => {
     let animationId;
     const ctx = canvasRef.current.getContext('2d');
@@ -254,32 +265,52 @@ function Pong() {
         ))}
       </div>
       
+      {/* Fullscreen Button */}
+      <button
+        onClick={handleFullscreen}
+        style={{
+          fontFamily: 'monospace',
+          fontSize: '1rem',
+          background: '#222',
+          color: '#0f0',
+          border: '2px solid #0f0',
+          padding: '8px 16px',
+          cursor: 'pointer',
+          marginBottom: 8,
+          touchAction: 'manipulation'
+        }}
+      >
+        {document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}
+      </button>
+      
       {/* Touch Controls for Mobile */}
       {isMobile && mode !== 2 && (
         <div style={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
-          width: WIDTH, 
-          marginTop: 16,
-          gap: 20
+          width: '100%', 
+          maxWidth: WIDTH,
+          marginTop: 20,
+          padding: '0 20px'
         }}>
           {/* Left Paddle Controls */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
             <button
               onTouchStart={() => handleTouchStart('left', 'up')}
               onTouchEnd={() => handleTouchEnd('left', 'up')}
               onMouseDown={() => handleTouchStart('left', 'up')}
               onMouseUp={() => handleTouchEnd('left', 'up')}
               style={{
-                width: 60,
-                height: 60,
-                fontSize: '1.5rem',
+                width: 80,
+                height: 80,
+                fontSize: '2rem',
                 background: '#222',
                 color: '#0f0',
-                border: '2px solid #0f0',
+                border: '3px solid #0f0',
                 borderRadius: '50%',
                 cursor: 'pointer',
-                fontFamily: 'monospace'
+                fontFamily: 'monospace',
+                touchAction: 'manipulation'
               }}
             >
               ↑
@@ -290,15 +321,16 @@ function Pong() {
               onMouseDown={() => handleTouchStart('left', 'down')}
               onMouseUp={() => handleTouchEnd('left', 'down')}
               style={{
-                width: 60,
-                height: 60,
-                fontSize: '1.5rem',
+                width: 80,
+                height: 80,
+                fontSize: '2rem',
                 background: '#222',
                 color: '#0f0',
-                border: '2px solid #0f0',
+                border: '3px solid #0f0',
                 borderRadius: '50%',
                 cursor: 'pointer',
-                fontFamily: 'monospace'
+                fontFamily: 'monospace',
+                touchAction: 'manipulation'
               }}
             >
               ↓
@@ -307,22 +339,23 @@ function Pong() {
           
           {/* Right Paddle Controls (only in 2 Player mode) */}
           {mode === 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
               <button
                 onTouchStart={() => handleTouchStart('right', 'up')}
                 onTouchEnd={() => handleTouchEnd('right', 'up')}
                 onMouseDown={() => handleTouchStart('right', 'up')}
                 onMouseUp={() => handleTouchEnd('right', 'up')}
                 style={{
-                  width: 60,
-                  height: 60,
-                  fontSize: '1.5rem',
+                  width: 80,
+                  height: 80,
+                  fontSize: '2rem',
                   background: '#222',
                   color: '#0f0',
-                  border: '2px solid #0f0',
+                  border: '3px solid #0f0',
                   borderRadius: '50%',
                   cursor: 'pointer',
-                  fontFamily: 'monospace'
+                  fontFamily: 'monospace',
+                  touchAction: 'manipulation'
                 }}
               >
                 ↑
@@ -333,15 +366,16 @@ function Pong() {
                 onMouseDown={() => handleTouchStart('right', 'down')}
                 onMouseUp={() => handleTouchEnd('right', 'down')}
                 style={{
-                  width: 60,
-                  height: 60,
-                  fontSize: '1.5rem',
+                  width: 80,
+                  height: 80,
+                  fontSize: '2rem',
                   background: '#222',
                   color: '#0f0',
-                  border: '2px solid #0f0',
+                  border: '3px solid #0f0',
                   borderRadius: '50%',
                   cursor: 'pointer',
-                  fontFamily: 'monospace'
+                  fontFamily: 'monospace',
+                  touchAction: 'manipulation'
                 }}
               >
                 ↓
