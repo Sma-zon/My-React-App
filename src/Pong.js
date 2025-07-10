@@ -28,6 +28,7 @@ function Pong() {
   const [modeDesc, setModeDesc] = useState(MODES[0].desc);
   const [hitCount, setHitCount] = useState(0);
   const [ballSpeed, setBallSpeed] = useState(BALL_SPEED);
+  const [isMobile, setIsMobile] = useState(false);
   const gameRef = useRef({
     leftY: HEIGHT / 2 - PADDLE_HEIGHT / 2,
     rightY: HEIGHT / 2 - PADDLE_HEIGHT / 2,
@@ -41,6 +42,16 @@ function Pong() {
     hitCount: 0,
     ballSpeed: BALL_SPEED
   });
+
+  // Check if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768 || 'ontouchstart' in window);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Mode switching with M key
   useEffect(() => {
@@ -75,6 +86,15 @@ function Pong() {
     gameRef.current.ballSpeed = BALL_SPEED;
   }, [mode]);
 
+  // Touch controls
+  const handleTouchStart = (paddle, direction) => {
+    gameRef.current.keys[paddle + direction] = true;
+  };
+
+  const handleTouchEnd = (paddle, direction) => {
+    gameRef.current.keys[paddle + direction] = false;
+  };
+
   useEffect(() => {
     let animationId;
     const ctx = canvasRef.current.getContext('2d');
@@ -108,25 +128,25 @@ function Pong() {
       // Move paddles based on mode
       if (mode === 0) {
         // 2 Player
-        if (gameRef.current.keys['w']) {
+        if (gameRef.current.keys['w'] || gameRef.current.keys['leftup']) {
           gameRef.current.leftY = Math.max(0, gameRef.current.leftY - PADDLE_SPEED);
         }
-        if (gameRef.current.keys['s']) {
+        if (gameRef.current.keys['s'] || gameRef.current.keys['leftdown']) {
           gameRef.current.leftY = Math.min(HEIGHT - PADDLE_HEIGHT, gameRef.current.leftY + PADDLE_SPEED);
         }
         // Player 2 uses I/K
-        if (gameRef.current.keys['i']) {
+        if (gameRef.current.keys['i'] || gameRef.current.keys['rightup']) {
           gameRef.current.rightY = Math.max(0, gameRef.current.rightY - PADDLE_SPEED);
         }
-        if (gameRef.current.keys['k']) {
+        if (gameRef.current.keys['k'] || gameRef.current.keys['rightdown']) {
           gameRef.current.rightY = Math.min(HEIGHT - PADDLE_HEIGHT, gameRef.current.rightY + PADDLE_SPEED);
         }
       } else if (mode === 1) {
         // Single Player (Player left, AI right)
-        if (gameRef.current.keys['w']) {
+        if (gameRef.current.keys['w'] || gameRef.current.keys['leftup']) {
           gameRef.current.leftY = Math.max(0, gameRef.current.leftY - PADDLE_SPEED);
         }
-        if (gameRef.current.keys['s']) {
+        if (gameRef.current.keys['s'] || gameRef.current.keys['leftdown']) {
           gameRef.current.leftY = Math.min(HEIGHT - PADDLE_HEIGHT, gameRef.current.leftY + PADDLE_SPEED);
         }
         gameRef.current.rightY = aiMove(gameRef.current.rightY, gameRef.current.ballY + BALL_SIZE / 2);
@@ -233,6 +253,103 @@ function Pong() {
           </button>
         ))}
       </div>
+      
+      {/* Touch Controls for Mobile */}
+      {isMobile && mode !== 2 && (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          width: WIDTH, 
+          marginTop: 16,
+          gap: 20
+        }}>
+          {/* Left Paddle Controls */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <button
+              onTouchStart={() => handleTouchStart('left', 'up')}
+              onTouchEnd={() => handleTouchEnd('left', 'up')}
+              onMouseDown={() => handleTouchStart('left', 'up')}
+              onMouseUp={() => handleTouchEnd('left', 'up')}
+              style={{
+                width: 60,
+                height: 60,
+                fontSize: '1.5rem',
+                background: '#222',
+                color: '#0f0',
+                border: '2px solid #0f0',
+                borderRadius: '50%',
+                cursor: 'pointer',
+                fontFamily: 'monospace'
+              }}
+            >
+              ↑
+            </button>
+            <button
+              onTouchStart={() => handleTouchStart('left', 'down')}
+              onTouchEnd={() => handleTouchEnd('left', 'down')}
+              onMouseDown={() => handleTouchStart('left', 'down')}
+              onMouseUp={() => handleTouchEnd('left', 'down')}
+              style={{
+                width: 60,
+                height: 60,
+                fontSize: '1.5rem',
+                background: '#222',
+                color: '#0f0',
+                border: '2px solid #0f0',
+                borderRadius: '50%',
+                cursor: 'pointer',
+                fontFamily: 'monospace'
+              }}
+            >
+              ↓
+            </button>
+          </div>
+          
+          {/* Right Paddle Controls (only in 2 Player mode) */}
+          {mode === 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button
+                onTouchStart={() => handleTouchStart('right', 'up')}
+                onTouchEnd={() => handleTouchEnd('right', 'up')}
+                onMouseDown={() => handleTouchStart('right', 'up')}
+                onMouseUp={() => handleTouchEnd('right', 'up')}
+                style={{
+                  width: 60,
+                  height: 60,
+                  fontSize: '1.5rem',
+                  background: '#222',
+                  color: '#0f0',
+                  border: '2px solid #0f0',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  fontFamily: 'monospace'
+                }}
+              >
+                ↑
+              </button>
+              <button
+                onTouchStart={() => handleTouchStart('right', 'down')}
+                onTouchEnd={() => handleTouchEnd('right', 'down')}
+                onMouseDown={() => handleTouchStart('right', 'down')}
+                onMouseUp={() => handleTouchEnd('right', 'down')}
+                style={{
+                  width: 60,
+                  height: 60,
+                  fontSize: '1.5rem',
+                  background: '#222',
+                  color: '#0f0',
+                  border: '2px solid #0f0',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  fontFamily: 'monospace'
+                }}
+              >
+                ↓
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

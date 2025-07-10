@@ -16,6 +16,7 @@ function Snake() {
   const canvasRef = useRef(null);
   const [score, setScore] = useState(0);
   const [running, setRunning] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const gameRef = useRef({
     snake: [...INIT_SNAKE],
     dir: { ...INIT_DIR },
@@ -23,6 +24,16 @@ function Snake() {
     alive: true,
     pendingDir: null
   });
+
+  // Check if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768 || 'ontouchstart' in window);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -42,6 +53,22 @@ function Snake() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Touch controls
+  const handleTouchDirection = (direction) => {
+    let d = null;
+    if (direction === 'up') d = { x: 0, y: -1 };
+    if (direction === 'down') d = { x: 0, y: 1 };
+    if (direction === 'left') d = { x: -1, y: 0 };
+    if (direction === 'right') d = { x: 1, y: 0 };
+    if (d) {
+      // Prevent reversing
+      const { x, y } = gameRef.current.dir;
+      if (d.x !== -x && d.y !== -y) {
+        gameRef.current.pendingDir = d;
+      }
+    }
+  };
 
   useEffect(() => {
     if (!running) return;
@@ -148,6 +175,89 @@ function Snake() {
         <button onClick={handleStart} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
           {score === 0 ? 'Start' : 'Restart'}
         </button>
+      )}
+      
+      {/* Touch Controls for Mobile */}
+      {isMobile && running && gameRef.current.alive && (
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(3, 1fr)', 
+          gap: 8, 
+          marginTop: 16,
+          width: 200
+        }}>
+          <div></div>
+          <button
+            onClick={() => handleTouchDirection('up')}
+            style={{
+              width: 60,
+              height: 60,
+              fontSize: '1.5rem',
+              background: '#222',
+              color: '#0f0',
+              border: '2px solid #0f0',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              fontFamily: 'monospace'
+            }}
+          >
+            ↑
+          </button>
+          <div></div>
+          
+          <button
+            onClick={() => handleTouchDirection('left')}
+            style={{
+              width: 60,
+              height: 60,
+              fontSize: '1.5rem',
+              background: '#222',
+              color: '#0f0',
+              border: '2px solid #0f0',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              fontFamily: 'monospace'
+            }}
+          >
+            ←
+          </button>
+          <div></div>
+          <button
+            onClick={() => handleTouchDirection('right')}
+            style={{
+              width: 60,
+              height: 60,
+              fontSize: '1.5rem',
+              background: '#222',
+              color: '#0f0',
+              border: '2px solid #0f0',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              fontFamily: 'monospace'
+            }}
+          >
+            →
+          </button>
+          
+          <div></div>
+          <button
+            onClick={() => handleTouchDirection('down')}
+            style={{
+              width: 60,
+              height: 60,
+              fontSize: '1.5rem',
+              background: '#222',
+              color: '#0f0',
+              border: '2px solid #0f0',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              fontFamily: 'monospace'
+            }}
+          >
+            ↓
+          </button>
+          <div></div>
+        </div>
       )}
     </div>
   );

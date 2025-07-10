@@ -88,6 +88,19 @@ function Game2048() {
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [running, setRunning] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const touchStart = useRef({ x: 0, y: 0 });
+  const gameBoardRef = useRef(null);
+
+  // Check if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768 || 'ontouchstart' in window);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     if (!running) return;
@@ -112,6 +125,47 @@ function Game2048() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [board, gameOver, running]);
 
+  // Touch controls
+  const handleTouchStart = (e) => {
+    if (!running || gameOver) return;
+    const touch = e.touches[0];
+    touchStart.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const handleTouchEnd = (e) => {
+    if (!running || gameOver) return;
+    const touch = e.changedTouches[0];
+    const deltaX = touch.clientX - touchStart.current.x;
+    const deltaY = touch.clientY - touchStart.current.y;
+    const minSwipeDistance = 30;
+
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      // Horizontal swipe
+      if (Math.abs(deltaX) > minSwipeDistance) {
+        const dir = deltaX > 0 ? 'right' : 'left';
+        const { board: newBoard, moved, score: addScore } = move(board, dir);
+        if (moved) {
+          addRandom(newBoard);
+          setBoard(newBoard);
+          setScore(s => s + addScore);
+          if (isGameOver(newBoard)) setGameOver(true);
+        }
+      }
+    } else {
+      // Vertical swipe
+      if (Math.abs(deltaY) > minSwipeDistance) {
+        const dir = deltaY > 0 ? 'down' : 'up';
+        const { board: newBoard, moved, score: addScore } = move(board, dir);
+        if (moved) {
+          addRandom(newBoard);
+          setBoard(newBoard);
+          setScore(s => s + addScore);
+          if (isGameOver(newBoard)) setGameOver(true);
+        }
+      }
+    }
+  };
+
   function handleStart() {
     setBoard(INIT_BOARD());
     setScore(0);
@@ -122,13 +176,19 @@ function Game2048() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <h2 style={{ fontFamily: 'monospace', color: '#00ff00', textShadow: '2px 2px #000' }}>2048</h2>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${SIZE}, 60px)`,
-        gridTemplateRows: `repeat(${SIZE}, 60px)`,
-        gap: 6,
-        marginBottom: 16
-      }}>
+      <div 
+        ref={gameBoardRef}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${SIZE}, 60px)`,
+          gridTemplateRows: `repeat(${SIZE}, 60px)`,
+          gap: 6,
+          marginBottom: 16,
+          touchAction: 'none' // Prevent default touch behaviors
+        }}
+      >
         {board.flat().map((cell, idx) => (
           <div key={idx} style={{
             width: 60,
@@ -152,7 +212,9 @@ function Game2048() {
           {score === 0 ? 'Start' : 'Restart'}
         </button>
       )}
-      <div style={{ color: '#0f0', fontFamily: 'monospace', marginTop: 8 }}>Controls: W/A/S/D</div>
+      <div style={{ color: '#0f0', fontFamily: 'monospace', marginTop: 8 }}>
+        Controls: {isMobile ? 'Swipe to move' : 'W/A/S/D'}
+      </div>
     </div>
   );
 }

@@ -61,7 +61,18 @@ function Tetris() {
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [running, setRunning] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const interval = useRef();
+
+  // Check if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768 || 'ontouchstart' in window);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     if (!running) return;
@@ -100,6 +111,23 @@ function Tetris() {
     }, 350);
     return () => clearInterval(interval.current);
   }, [board, piece, gameOver, running]);
+
+  // Touch controls
+  const handleTouchMove = (direction) => {
+    if (!running || gameOver) return;
+    if (direction === 'left' && canMove(board, piece, -1, 0)) {
+      setPiece(p => ({ ...p, x: p.x - 1 }));
+    } else if (direction === 'right' && canMove(board, piece, 1, 0)) {
+      setPiece(p => ({ ...p, x: p.x + 1 }));
+    } else if (direction === 'down' && canMove(board, piece, 0, 1)) {
+      setPiece(p => ({ ...p, y: p.y + 1 }));
+    } else if (direction === 'rotate') {
+      const rotated = rotate(piece.shape);
+      if (canMove(board, piece, 0, 0, rotated)) {
+        setPiece(p => ({ ...p, shape: rotated }));
+      }
+    }
+  };
 
   function handleStart() {
     setBoard(Array(ROWS).fill().map(() => Array(COLS).fill(0)));
@@ -144,6 +172,86 @@ function Tetris() {
           {score === 0 ? 'Start' : 'Restart'}
         </button>
       )}
+      
+      {/* Touch Controls for Mobile */}
+      {isMobile && running && !gameOver && (
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(3, 1fr)', 
+          gap: 8, 
+          marginTop: 16,
+          width: 200
+        }}>
+          <div></div>
+          <button
+            onClick={() => handleTouchMove('rotate')}
+            style={{
+              width: 60,
+              height: 60,
+              fontSize: '1.2rem',
+              background: '#222',
+              color: '#0f0',
+              border: '2px solid #0f0',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              fontFamily: 'monospace'
+            }}
+          >
+            Rotate
+          </button>
+          <div></div>
+          
+          <button
+            onClick={() => handleTouchMove('left')}
+            style={{
+              width: 60,
+              height: 60,
+              fontSize: '1.5rem',
+              background: '#222',
+              color: '#0f0',
+              border: '2px solid #0f0',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              fontFamily: 'monospace'
+            }}
+          >
+            ←
+          </button>
+          <button
+            onClick={() => handleTouchMove('down')}
+            style={{
+              width: 60,
+              height: 60,
+              fontSize: '1.5rem',
+              background: '#222',
+              color: '#0f0',
+              border: '2px solid #0f0',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              fontFamily: 'monospace'
+            }}
+          >
+            ↓
+          </button>
+          <button
+            onClick={() => handleTouchMove('right')}
+            style={{
+              width: 60,
+              height: 60,
+              fontSize: '1.5rem',
+              background: '#222',
+              color: '#0f0',
+              border: '2px solid #0f0',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              fontFamily: 'monospace'
+            }}
+          >
+            →
+          </button>
+        </div>
+      )}
+      
       <div style={{ color: '#0f0', fontFamily: 'monospace', marginTop: 8 }}>Controls: W/A/S/D</div>
     </div>
   );

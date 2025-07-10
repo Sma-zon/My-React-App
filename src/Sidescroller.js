@@ -15,6 +15,7 @@ function Sidescroller() {
   const [score, setScore] = useState(0);
   const [running, setRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const gameRef = useRef({
     playerX: 60,
     playerY: GROUND - PLAYER_SIZE,
@@ -24,6 +25,16 @@ function Sidescroller() {
     keys: {},
     lastScoredObstacle: null
   });
+
+  // Check if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768 || 'ontouchstart' in window);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -39,6 +50,15 @@ function Sidescroller() {
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, []);
+
+  // Touch controls
+  const handleTouchStart = (action) => {
+    gameRef.current.keys[action] = true;
+  };
+
+  const handleTouchEnd = (action) => {
+    gameRef.current.keys[action] = false;
+  };
 
   useEffect(() => {
     if (!running) return;
@@ -71,10 +91,14 @@ function Sidescroller() {
     }
     function update() {
       // Player movement
-      if (gameRef.current.keys['a']) gameRef.current.playerX = Math.max(0, gameRef.current.playerX - SPEED);
-      if (gameRef.current.keys['d']) gameRef.current.playerX = Math.min(WIDTH - PLAYER_SIZE, gameRef.current.playerX + SPEED);
+      if (gameRef.current.keys['a'] || gameRef.current.keys['left']) {
+        gameRef.current.playerX = Math.max(0, gameRef.current.playerX - SPEED);
+      }
+      if (gameRef.current.keys['d'] || gameRef.current.keys['right']) {
+        gameRef.current.playerX = Math.min(WIDTH - PLAYER_SIZE, gameRef.current.playerX + SPEED);
+      }
       // Jump
-      if (gameRef.current.keys[' '] && gameRef.current.playerY + PLAYER_SIZE >= GROUND) {
+      if ((gameRef.current.keys[' '] || gameRef.current.keys['jump']) && gameRef.current.playerY + PLAYER_SIZE >= GROUND) {
         gameRef.current.playerVY = JUMP;
       }
       // Gravity
@@ -153,6 +177,80 @@ function Sidescroller() {
         <button onClick={handleStart} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
           {score === 0 ? 'Start' : 'Restart'}
         </button>
+      )}
+      
+      {/* Touch Controls for Mobile */}
+      {isMobile && running && !gameOver && (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          width: WIDTH, 
+          marginTop: 16,
+          gap: 20
+        }}>
+          {/* Movement Controls */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onTouchStart={() => handleTouchStart('left')}
+              onTouchEnd={() => handleTouchEnd('left')}
+              onMouseDown={() => handleTouchStart('left')}
+              onMouseUp={() => handleTouchEnd('left')}
+              style={{
+                width: 60,
+                height: 60,
+                fontSize: '1.5rem',
+                background: '#222',
+                color: '#0f0',
+                border: '2px solid #0f0',
+                borderRadius: '50%',
+                cursor: 'pointer',
+                fontFamily: 'monospace'
+              }}
+            >
+              ←
+            </button>
+            <button
+              onTouchStart={() => handleTouchStart('right')}
+              onTouchEnd={() => handleTouchEnd('right')}
+              onMouseDown={() => handleTouchStart('right')}
+              onMouseUp={() => handleTouchEnd('right')}
+              style={{
+                width: 60,
+                height: 60,
+                fontSize: '1.5rem',
+                background: '#222',
+                color: '#0f0',
+                border: '2px solid #0f0',
+                borderRadius: '50%',
+                cursor: 'pointer',
+                fontFamily: 'monospace'
+              }}
+            >
+              →
+            </button>
+          </div>
+          
+          {/* Jump Button */}
+          <button
+            onTouchStart={() => handleTouchStart('jump')}
+            onTouchEnd={() => handleTouchEnd('jump')}
+            onMouseDown={() => handleTouchStart('jump')}
+            onMouseUp={() => handleTouchEnd('jump')}
+            style={{
+              width: 80,
+              height: 60,
+              fontSize: '1.2rem',
+              background: '#222',
+              color: '#0f0',
+              border: '2px solid #0f0',
+              borderRadius: 30,
+              cursor: 'pointer',
+              fontFamily: 'monospace'
+            }}
+          >
+            Jump
+          </button>
+        </div>
       )}
     </div>
   );
