@@ -26,6 +26,7 @@ function App() {
               <li><Link to="/2048">2048</Link></li>
               <li><Link to="/tetris">Tetris</Link></li>
               <li><Link to="/sidescroller">Mini Sidescroller</Link></li>
+              <li><a href="https://my-first-react-app-kej4.vercel.app" target="_blank" rel="noopener noreferrer">Upgraded Snake</a></li>
             </ul>
           </nav>
           <Routes>
