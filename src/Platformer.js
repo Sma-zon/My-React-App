@@ -51,6 +51,11 @@ function Platformer() {
     frameCount: 0
   });
 
+  // Initialize on first load
+  useEffect(() => {
+    initializeLevel();
+  }, []);
+
   // Check if device is mobile
   useEffect(() => {
     const checkMobile = () => {
@@ -434,22 +439,27 @@ function Platformer() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <h2 style={{ fontFamily: 'monospace', color: '#00ff00', textShadow: '2px 2px #000' }}>Platformer</h2>
-      <Link to="/" style={{
-        display: 'inline-block',
-        marginBottom: 16,
-        fontFamily: 'monospace',
-        fontSize: '1rem',
-        color: '#111',
-        background: '#0f0',
-        border: '2px solid #0f0',
-        padding: '6px 16px',
-        cursor: 'pointer',
-        textShadow: '1px 1px #000',
-        borderRadius: 6,
-        fontWeight: 'bold',
-        textDecoration: 'none',
-        boxShadow: '0 0 8px #0f0'
-      }}>Back to Main Menu</Link>
+      <button 
+        onClick={() => window.location.href = '/'}
+        style={{
+          display: 'inline-block',
+          marginBottom: 16,
+          fontFamily: 'monospace',
+          fontSize: '1rem',
+          color: '#111',
+          background: '#0f0',
+          border: '2px solid #0f0',
+          padding: '6px 16px',
+          cursor: 'pointer',
+          textShadow: '1px 1px #000',
+          borderRadius: 6,
+          fontWeight: 'bold',
+          textDecoration: 'none',
+          boxShadow: '0 0 8px #0f0'
+        }}
+      >
+        Back to Main Menu
+      </button>
       <canvas
         ref={canvasRef}
         width={WIDTH}
@@ -471,7 +481,8 @@ function Platformer() {
         }}>
           <div></div>
           <button
-            onClick={() => handleTouchDirection({ x: 0, y: -1 })}
+            onTouchStart={() => handleJump()}
+            onMouseDown={() => handleJump()}
             style={{
               width: 60,
               height: 60,
@@ -490,8 +501,10 @@ function Platformer() {
           <div></div>
           
           <button
-            onClick={() => gameRef.current.keys['a'] = true}
+            onTouchStart={() => gameRef.current.keys['a'] = true}
             onTouchEnd={() => gameRef.current.keys['a'] = false}
+            onMouseDown={() => gameRef.current.keys['a'] = true}
+            onMouseUp={() => gameRef.current.keys['a'] = false}
             style={{
               width: 60,
               height: 60,
@@ -508,8 +521,10 @@ function Platformer() {
             ←
           </button>
           <button
-            onClick={() => gameRef.current.keys['d'] = true}
+            onTouchStart={() => gameRef.current.keys['d'] = true}
             onTouchEnd={() => gameRef.current.keys['d'] = false}
+            onMouseDown={() => gameRef.current.keys['d'] = true}
+            onMouseUp={() => gameRef.current.keys['d'] = false}
             style={{
               width: 60,
               height: 60,
