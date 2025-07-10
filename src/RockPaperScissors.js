@@ -21,11 +21,11 @@ function RockPaperScissors() {
   const [result, setResult] = useState(null);
 
   const handleChoice = (playerChoice) => {
-    const choices = ['rock', 'paper', 'scissors'];
+    const choices = ['Rock', 'Paper', 'Scissors'];
     const computerChoice = choices[Math.floor(Math.random() * 3)];
     setPlayerChoice(playerChoice);
     setComputerChoice(computerChoice);
-    setResult(determineWinner(playerChoice, computerChoice));
+    setResult(getResult(playerChoice, computerChoice));
   };
 
   // Fullscreen functionality
