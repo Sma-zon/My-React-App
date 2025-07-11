@@ -39,10 +39,10 @@ function Frogger() {
   // Initialize vehicles
   const initializeVehicles = () => {
     const vehicles = [];
-    const speeds = [1, 1.5, 2, 2.5, 3]; // Reduced speeds for easier gameplay
+    const speeds = [0.5, 0.7, 1, 1.2, 1.5, 1.8, 2]; // Much slower speeds for easier gameplay
     
-    // Create vehicles for each lane
-    for (let lane = 1; lane < 6; lane++) {
+    // Create vehicles for each lane (increased from 5 to 7 lanes)
+    for (let lane = 1; lane < 8; lane++) {
       const speed = speeds[lane - 1];
       const direction = lane % 2 === 0 ? 1 : -1;
       const y = ROWS - 2 - lane;
@@ -64,19 +64,19 @@ function Frogger() {
   // Initialize logs
   const initializeLogs = () => {
     const logs = [];
-    const speeds = [1, 1.5, 2]; // Reduced speeds for easier gameplay
+    const speeds = [0.3, 0.5, 0.7, 0.9, 1.1]; // Much slower speeds for easier gameplay
     
-    // Create logs for water lanes
-    for (let lane = 6; lane < 11; lane++) {
-      const speed = speeds[(lane - 6) % 3];
+    // Create logs for water lanes (increased from 5 to 7 lanes)
+    for (let lane = 8; lane < 15; lane++) {
+      const speed = speeds[(lane - 8) % 5];
       const direction = lane % 2 === 0 ? 1 : -1;
       const y = ROWS - 2 - lane;
       
-      for (let i = 0; i < 2; i++) {
+      for (let i = 0; i < 3; i++) {
         logs.push({
-          x: (i * COLS / 2 + Math.random() * 100) % COLS,
+          x: (i * COLS / 3 + Math.random() * 100) % COLS,
           y: y,
-          width: 4,
+          width: 5, // Wider logs that extend to the end
           speed: speed * direction
         });
       }
@@ -88,11 +88,11 @@ function Frogger() {
   // Initialize turtles
   const initializeTurtles = () => {
     const turtles = [];
-    const speeds = [0.5, 1]; // Reduced speeds for easier gameplay
+    const speeds = [0.2, 0.4, 0.6, 0.8, 1]; // Much slower speeds for easier gameplay
     
-    // Create turtles for water lanes
-    for (let lane = 6; lane < 11; lane++) {
-      const speed = speeds[(lane - 6) % 2];
+    // Create turtles for water lanes (increased from 5 to 7 lanes)
+    for (let lane = 8; lane < 15; lane++) {
+      const speed = speeds[(lane - 8) % 5];
       const direction = lane % 2 === 0 ? 1 : -1;
       const y = ROWS - 2 - lane;
       

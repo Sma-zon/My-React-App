@@ -57,6 +57,14 @@ function Platformer() {
       console.error("Canvas ref not available");
       return;
     }
+    
+    // Ensure canvas context is available
+    const ctx = canvasRef.current.getContext('2d');
+    if (!ctx) {
+      console.error("Canvas context not available");
+      return;
+    }
+    
     initializeLevel();
     setRunning(true);
     setGameOver(false);

@@ -73,6 +73,18 @@ function PacMan() {
 
   // Initialize on first load
   useEffect(() => {
+    if (!canvasRef.current) {
+      console.error("Canvas ref not available");
+      return;
+    }
+    
+    // Ensure canvas context is available
+    const ctx = canvasRef.current.getContext('2d');
+    if (!ctx) {
+      console.error("Canvas context not available");
+      return;
+    }
+    
     initializeMap();
     setRunning(true);
     setGameOver(false);
@@ -199,79 +211,83 @@ function PacMan() {
     
     let animationId;
     function draw() {
-      const ctx = canvasRef.current.getContext('2d');
+      try {
+        const ctx = canvasRef.current.getContext('2d');
+        
+        // Clear canvas
+        ctx.fillStyle = '#111';
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
       
-      // Clear canvas
-      ctx.fillStyle = '#111';
-      ctx.fillRect(0, 0, WIDTH, HEIGHT);
-      
-      // Draw map
-      for (let y = 0; y < ROWS; y++) {
-        for (let x = 0; x < COLS; x++) {
-          const cell = gameMap[y][x];
-          if (cell === 0) {
-            // Wall
-            ctx.fillStyle = '#0066ff';
-            ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-          } else if (cell === 1) {
-            // Dot
-            ctx.fillStyle = '#ffff00';
-            ctx.beginPath();
-            ctx.arc(x * CELL_SIZE + CELL_SIZE/2, y * CELL_SIZE + CELL_SIZE/2, 2, 0, Math.PI * 2);
-            ctx.fill();
-          } else if (cell === 2) {
-            // Power pellet
-            ctx.fillStyle = '#ffff00';
-            ctx.beginPath();
-            ctx.arc(x * CELL_SIZE + CELL_SIZE/2, y * CELL_SIZE + CELL_SIZE/2, 6, 0, Math.PI * 2);
-            ctx.fill();
+        // Draw map
+        for (let y = 0; y < ROWS; y++) {
+          for (let x = 0; x < COLS; x++) {
+            const cell = gameMap[y] ? gameMap[y][x] : 0;
+            if (cell === 0) {
+              // Wall
+              ctx.fillStyle = '#0066ff';
+              ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+            } else if (cell === 1) {
+              // Dot
+              ctx.fillStyle = '#ffff00';
+              ctx.beginPath();
+              ctx.arc(x * CELL_SIZE + CELL_SIZE/2, y * CELL_SIZE + CELL_SIZE/2, 2, 0, Math.PI * 2);
+              ctx.fill();
+            } else if (cell === 2) {
+              // Power pellet
+              ctx.fillStyle = '#ffff00';
+              ctx.beginPath();
+              ctx.arc(x * CELL_SIZE + CELL_SIZE/2, y * CELL_SIZE + CELL_SIZE/2, 6, 0, Math.PI * 2);
+              ctx.fill();
+            }
           }
         }
-      }
-      
-      // Draw Pac-Man
-      const pacman = gameRef.current.pacman;
-      ctx.fillStyle = '#ffff00';
-      ctx.beginPath();
-      const centerX = pacman.x * CELL_SIZE + CELL_SIZE/2;
-      const centerY = pacman.y * CELL_SIZE + CELL_SIZE/2;
-      const radius = CELL_SIZE/2 - 2;
-      
-      let startAngle = 0;
-      let endAngle = Math.PI * 2;
-      
-      if (pacman.dir.x === 1) startAngle = 0.2;
-      else if (pacman.dir.x === -1) startAngle = Math.PI + 0.2;
-      else if (pacman.dir.y === -1) startAngle = Math.PI/2 + 0.2;
-      else if (pacman.dir.y === 1) startAngle = 3*Math.PI/2 + 0.2;
-      
-      if (pacman.dir.x !== 0 || pacman.dir.y !== 0) {
-        endAngle = startAngle + Math.PI * 2 - 0.4;
-      }
-      
-      ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-      ctx.lineTo(centerX, centerY);
-      ctx.fill();
-      
-      // Draw ghosts
-      gameRef.current.ghosts.forEach(ghost => {
-        ctx.fillStyle = gameRef.current.powerMode ? '#0000ff' : ghost.color;
+        
+        // Draw Pac-Man
+        const pacman = gameRef.current.pacman;
+        ctx.fillStyle = '#ffff00';
         ctx.beginPath();
-        ctx.arc(ghost.x * CELL_SIZE + CELL_SIZE/2, ghost.y * CELL_SIZE + CELL_SIZE/2, CELL_SIZE/2 - 2, 0, Math.PI * 2);
+        const centerX = pacman.x * CELL_SIZE + CELL_SIZE/2;
+        const centerY = pacman.y * CELL_SIZE + CELL_SIZE/2;
+        const radius = CELL_SIZE/2 - 2;
+        
+        let startAngle = 0;
+        let endAngle = Math.PI * 2;
+        
+        if (pacman.dir.x === 1) startAngle = 0.2;
+        else if (pacman.dir.x === -1) startAngle = Math.PI + 0.2;
+        else if (pacman.dir.y === -1) startAngle = Math.PI/2 + 0.2;
+        else if (pacman.dir.y === 1) startAngle = 3*Math.PI/2 + 0.2;
+        
+        if (pacman.dir.x !== 0 || pacman.dir.y !== 0) {
+          endAngle = startAngle + Math.PI * 2 - 0.4;
+        }
+        
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.lineTo(centerX, centerY);
         ctx.fill();
-      });
-      
-      // Draw score and lives
-      ctx.font = '20px monospace';
-      ctx.fillStyle = '#0f0';
-      ctx.fillText(`Score: ${score}`, 10, 30);
-      ctx.fillText(`Lives: ${lives}`, WIDTH - 100, 30);
-      
-      if (gameOver) {
-        ctx.font = '32px monospace';
-        ctx.fillStyle = '#f00';
-        ctx.textAlign = 'center';
-        ctx.fillText('Game Over', WIDTH / 2, HEIGHT / 2);
+        
+        // Draw ghosts
+        gameRef.current.ghosts.forEach(ghost => {
+          ctx.fillStyle = gameRef.current.powerMode ? '#0000ff' : ghost.color;
+          ctx.beginPath();
+          ctx.arc(ghost.x * CELL_SIZE + CELL_SIZE/2, ghost.y * CELL_SIZE + CELL_SIZE/2, CELL_SIZE/2 - 2, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        
+        // Draw score and lives
+        ctx.font = '20px monospace';
+        ctx.fillStyle = '#0f0';
+        ctx.fillText(`Score: ${score}`, 10, 30);
+        ctx.fillText(`Lives: ${lives}`, WIDTH - 100, 30);
+        
+        if (gameOver) {
+          ctx.font = '32px monospace';
+          ctx.fillStyle = '#f00';
+          ctx.textAlign = 'center';
+          ctx.fillText('Game Over', WIDTH / 2, HEIGHT / 2);
+        }
+      } catch (e) {
+        console.error('Error drawing game state:', e);
       }
     }
     
@@ -365,7 +381,7 @@ function PacMan() {
       });
       
       // Check win condition
-      const dotsLeft = gameMap.flat().filter(cell => cell === 1 || cell === 2).length;
+      const dotsLeft = gameMap && gameMap.length > 0 ? gameMap.flat().filter(cell => cell === 1 || cell === 2).length : 0;
       if (dotsLeft === 0) {
         setGameOver(true);
         setRunning(false);

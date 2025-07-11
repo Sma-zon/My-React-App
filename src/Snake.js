@@ -19,12 +19,14 @@ function Snake() {
   const [score, setScore] = useState(0);
   const [running, setRunning] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [speed, setSpeed] = useState('medium'); // 'slow', 'medium', 'fast'
   const gameRef = useRef({
     snake: [...INIT_SNAKE],
     dir: { ...INIT_DIR },
     food: { x: 12, y: 10 },
     alive: true,
-    pendingDir: null
+    pendingDir: null,
+    lastUpdate: 0
   });
   const animationRef = useRef(null);
 
@@ -182,8 +184,19 @@ function Snake() {
       }
     }
     
-    function gameLoop() {
-      update();
+    function gameLoop(currentTime) {
+      // Speed-based timing
+      const speedDelays = {
+        slow: 200,    // 5 FPS
+        medium: 120,  // ~8 FPS
+        fast: 80      // ~12 FPS
+      };
+      
+      if (currentTime - gameRef.current.lastUpdate >= speedDelays[speed]) {
+        update();
+        gameRef.current.lastUpdate = currentTime;
+      }
+      
       draw();
       animationRef.current = requestAnimationFrame(gameLoop);
     }
@@ -243,6 +256,66 @@ function Snake() {
       />
       <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>
         Controls: W/A/S/D
+      </div>
+      
+      {/* Speed Controls */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8, textAlign: 'center' }}>
+          Speed:
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => {
+              soundManager.buttonClick();
+              setSpeed('slow');
+            }}
+            style={{
+              fontFamily: 'monospace',
+              fontSize: '0.9rem',
+              background: speed === 'slow' ? '#0f0' : '#222',
+              color: speed === 'slow' ? '#000' : '#0f0',
+              border: '2px solid #0f0',
+              padding: '6px 12px',
+              cursor: 'pointer'
+            }}
+          >
+            Slow
+          </button>
+          <button
+            onClick={() => {
+              soundManager.buttonClick();
+              setSpeed('medium');
+            }}
+            style={{
+              fontFamily: 'monospace',
+              fontSize: '0.9rem',
+              background: speed === 'medium' ? '#0f0' : '#222',
+              color: speed === 'medium' ? '#000' : '#0f0',
+              border: '2px solid #0f0',
+              padding: '6px 12px',
+              cursor: 'pointer'
+            }}
+          >
+            Medium
+          </button>
+          <button
+            onClick={() => {
+              soundManager.buttonClick();
+              setSpeed('fast');
+            }}
+            style={{
+              fontFamily: 'monospace',
+              fontSize: '0.9rem',
+              background: speed === 'fast' ? '#0f0' : '#222',
+              color: speed === 'fast' ? '#000' : '#0f0',
+              border: '2px solid #0f0',
+              padding: '6px 12px',
+              cursor: 'pointer'
+            }}
+          >
+            Fast
+          </button>
+        </div>
       </div>
       {(!running || !gameRef.current.alive) && (
         <button onClick={() => {
