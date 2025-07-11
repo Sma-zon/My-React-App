@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import soundManager from './sounds';
 import { Link } from 'react-router-dom';
+import MobileControls from './MobileControls';
 
 const WIDTH = 600;
 const HEIGHT = 200;
@@ -202,14 +203,24 @@ function Sidescroller() {
       >
         Back to Main Menu
       </button>
-      <canvas
-        ref={canvasRef}
-        width={WIDTH}
-        height={HEIGHT}
-        style={{ border: '4px solid #0f0', background: '#111', marginBottom: 16 }}
-      />
+      <div style={{ width: '100%', maxWidth: 600, aspectRatio: '3', margin: '0 auto', marginBottom: 16 }}>
+        <canvas
+          ref={canvasRef}
+          width={WIDTH}
+          height={HEIGHT}
+          style={{
+            width: '100%',
+            height: 'auto',
+            border: '4px solid #0f0',
+            background: '#111',
+            display: 'block',
+            boxSizing: 'border-box',
+            touchAction: 'manipulation'
+          }}
+        />
+      </div>
       <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>
-        Controls: A/D (Move), Space (Jump)
+        Controls: {isMobile ? 'Touch D-pad below' : 'A/D (Move), Space (Jump)'}
       </div>
       {(!running || gameOver) && (
         <button onClick={handleStart} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
@@ -219,81 +230,12 @@ function Sidescroller() {
       
       {/* Touch Controls for Mobile */}
       {isMobile && running && !gameOver && (
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          width: '100%', 
-          maxWidth: WIDTH,
-          marginTop: 20,
-          padding: '0 20px',
-          gap: 30
-        }}>
-          {/* Movement Controls */}
-          <div style={{ display: 'flex', gap: 15 }}>
-            <button
-              onTouchStart={() => handleTouchStart('left')}
-              onTouchEnd={() => handleTouchEnd('left')}
-              onMouseDown={() => handleTouchStart('left')}
-              onMouseUp={() => handleTouchEnd('left')}
-              style={{
-                width: 80,
-                height: 80,
-                fontSize: '2rem',
-                background: '#222',
-                color: '#0f0',
-                border: '3px solid #0f0',
-                borderRadius: '50%',
-                cursor: 'pointer',
-                fontFamily: 'monospace',
-                touchAction: 'manipulation'
-              }}
-            >
-              ←
-            </button>
-            <button
-              onTouchStart={() => handleTouchStart('right')}
-              onTouchEnd={() => handleTouchEnd('right')}
-              onMouseDown={() => handleTouchStart('right')}
-              onMouseUp={() => handleTouchEnd('right')}
-              style={{
-                width: 80,
-                height: 80,
-                fontSize: '2rem',
-                background: '#222',
-                color: '#0f0',
-                border: '3px solid #0f0',
-                borderRadius: '50%',
-                cursor: 'pointer',
-                fontFamily: 'monospace',
-                touchAction: 'manipulation'
-              }}
-            >
-              →
-            </button>
-          </div>
-          
-          {/* Jump Button */}
-          <button
-            onTouchStart={() => handleTouchStart('jump')}
-            onTouchEnd={() => handleTouchEnd('jump')}
-            onMouseDown={() => handleTouchStart('jump')}
-            onMouseUp={() => handleTouchEnd('jump')}
-            style={{
-              width: 100,
-              height: 80,
-              fontSize: '1.5rem',
-              background: '#222',
-              color: '#0f0',
-              border: '3px solid #0f0',
-              borderRadius: 40,
-              cursor: 'pointer',
-              fontFamily: 'monospace',
-              touchAction: 'manipulation'
-            }}
-          >
-            Jump
-          </button>
-        </div>
+        <MobileControls
+          onUp={() => { gameRef.current.keys[' '] = true; setTimeout(() => { gameRef.current.keys[' '] = false; }, 150); }}
+          onDown={undefined}
+          onLeft={() => { gameRef.current.keys['a'] = true; setTimeout(() => { gameRef.current.keys['a'] = false; }, 150); }}
+          onRight={() => { gameRef.current.keys['d'] = true; setTimeout(() => { gameRef.current.keys['d'] = false; }, 150); }}
+        />
       )}
 
       {/* Fullscreen Button */}

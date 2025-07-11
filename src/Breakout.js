@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import soundManager from './sounds';
 import { Link } from 'react-router-dom';
+import MobileControls from './MobileControls'; // (not used, but for consistency)
 
 const WIDTH = 600;
 const HEIGHT = 400;
@@ -265,17 +266,35 @@ function Breakout() {
       >
         Back to Main Menu
       </button>
-      <canvas
-        ref={canvasRef}
-        width={WIDTH}
-        height={HEIGHT}
-        style={{ border: '4px solid #0f0', background: '#111', marginBottom: 16 }}
-        onTouchMove={handleTouchMove}
-        onTouchStart={handleTouchMove}
-      />
-      <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>
-        Controls: {isMobile ? 'Touch to move paddle' : 'A/D or Arrow Keys'}
+      <div style={{ width: '100%', maxWidth: 480, aspectRatio: '2', margin: '0 auto', marginBottom: 16 }}>
+        <canvas
+          ref={canvasRef}
+          width={WIDTH}
+          height={HEIGHT}
+          style={{
+            width: '100%',
+            height: 'auto',
+            border: '4px solid #0f0',
+            background: '#111',
+            display: 'block',
+            boxSizing: 'border-box',
+            touchAction: 'manipulation'
+          }}
+          onTouchMove={handleTouchMove}
+          onTouchStart={handleTouchMove}
+        />
       </div>
+      <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>
+        Controls: {isMobile ? 'Touch below paddle to move' : 'A/D or Arrow Keys'}
+      </div>
+      {/* Large touch area for paddle movement on mobile */}
+      {isMobile && running && !gameOver && (
+        <div
+          style={{ width: '100%', maxWidth: 480, height: 80, margin: '0 auto', marginBottom: 16, background: 'rgba(0,255,0,0.08)', borderRadius: 12, touchAction: 'pan-x', zIndex: 10 }}
+          onTouchMove={handleTouchMove}
+          onTouchStart={handleTouchMove}
+        />
+      )}
       {(!running || gameOver) && (
         <button onClick={handleStart} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
           {score === 0 ? 'Start' : 'Restart'}

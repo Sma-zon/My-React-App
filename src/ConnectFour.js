@@ -336,37 +336,44 @@ function ConnectFour() {
       </div>
 
       {/* Connect Four Board */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: `repeat(${COLS}, 1fr)`, 
-        gap: 4, 
-        background: '#0066ff', 
-        padding: 8,
-        marginBottom: 16,
-        borderRadius: '8px'
-      }}>
-        {board.map((row, rowIndex) =>
-          row.map((cell, colIndex) => (
-            <div
-              key={`${rowIndex}-${colIndex}`}
-              onClick={() => handleColumnClick(colIndex)}
-              style={{
-                width: isMobile ? 40 : 60,
-                height: isMobile ? 40 : 60,
-                background: cell === 0 
-                  ? '#111' 
-                  : cell === 1 
-                    ? '#ff0000' 
-                    : '#ffff00',
-                border: '2px solid #0f0',
-                borderRadius: '50%',
-                cursor: isColumnFull(board, colIndex) ? 'default' : 'pointer',
-                transition: 'all 0.3s ease',
-                touchAction: 'manipulation'
-              }}
-            />
-          ))
-        )}
+      <div style={{ width: '100%', maxWidth: 420, margin: '0 auto', marginBottom: 16 }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${COLS}, 1fr)`,
+            gap: 6,
+            width: '100%',
+            aspectRatio: COLS + '/' + ROWS,
+          }}
+        >
+          {board.map((row, r) =>
+            row.map((cell, c) => (
+              <button
+                key={r + '-' + c}
+                onClick={() => handleColumnClick(c)}
+                disabled={!!winner || isColumnFull(board, c)}
+                style={{
+                  width: '100%',
+                  aspectRatio: '1',
+                  fontSize: isMobile ? '2.2rem' : '1.5rem',
+                  background: cell === 1 ? '#f00' : cell === 2 ? '#ff0' : '#222',
+                  color: cell ? '#111' : '#0f0',
+                  border: '3px solid #0f0',
+                  borderRadius: '50%',
+                  cursor: !!winner ? 'default' : 'pointer',
+                  fontFamily: 'monospace',
+                  touchAction: 'manipulation',
+                  boxShadow: cell ? '0 0 8px #0f0' : undefined,
+                  userSelect: 'none',
+                  outline: 'none',
+                  transition: 'background 0.2s, color 0.2s',
+                }}
+              >
+                {cell ? '' : '•'}
+              </button>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Control Buttons */}

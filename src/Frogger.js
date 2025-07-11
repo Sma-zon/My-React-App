@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import soundManager from './sounds';
 import { Link } from 'react-router-dom';
+import MobileControls from './MobileControls';
 
 const WIDTH = 600;
 const HEIGHT = 600;
@@ -429,126 +430,33 @@ function Frogger() {
       >
         Back to Main Menu
       </button>
-      <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ width: '100%', maxWidth: 600, aspectRatio: '1.2', margin: '0 auto', marginBottom: 16 }}>
         <canvas
           ref={canvasRef}
           width={WIDTH}
           height={HEIGHT}
           style={{
+            width: '100%',
+            height: 'auto',
             border: '4px solid #0f0',
             background: '#111',
-            marginBottom: 16,
-            width: '100%',
-            maxWidth: 600,
-            height: 'auto',
-            touchAction: 'manipulation',
-            boxSizing: 'border-box'
+            display: 'block',
+            boxSizing: 'border-box',
+            touchAction: 'manipulation'
           }}
         />
       </div>
       <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8, textAlign: 'center' }}>
-        Controls: {isMobile ? 'Touch arrows below' : 'Arrow Keys or WASD'}
+        Controls: {isMobile ? 'Touch D-pad below' : 'Arrow Keys or WASD'}
       </div>
-      {/* Mobile Touch Controls */}
+      {/* Mobile D-pad Controls */}
       {isMobile && running && !gameOver && (
-        <div style={{
-          position: 'fixed',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 100,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          width: '100vw',
-          background: 'rgba(17,17,17,0.95)',
-          padding: '12px 0 24px 0',
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
-            <button
-              onTouchStart={() => handleTouchDirection({ x: 0, y: -1 })}
-              onMouseDown={() => handleTouchDirection({ x: 0, y: -1 })}
-              style={{
-                width: 70,
-                height: 70,
-                fontSize: '2.2rem',
-                background: '#222',
-                color: '#0f0',
-                border: '3px solid #0f0',
-                borderRadius: '50%',
-                cursor: 'pointer',
-                fontFamily: 'monospace',
-                touchAction: 'manipulation',
-                margin: '0 32px',
-                boxShadow: '0 0 8px #0f0',
-              }}
-            >
-              ↑
-            </button>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 32 }}>
-            <button
-              onTouchStart={() => handleTouchDirection({ x: -1, y: 0 })}
-              onMouseDown={() => handleTouchDirection({ x: -1, y: 0 })}
-              style={{
-                width: 70,
-                height: 70,
-                fontSize: '2.2rem',
-                background: '#222',
-                color: '#0f0',
-                border: '3px solid #0f0',
-                borderRadius: '50%',
-                cursor: 'pointer',
-                fontFamily: 'monospace',
-                touchAction: 'manipulation',
-                boxShadow: '0 0 8px #0f0',
-              }}
-            >
-              ←
-            </button>
-            <button
-              onTouchStart={() => handleTouchDirection({ x: 1, y: 0 })}
-              onMouseDown={() => handleTouchDirection({ x: 1, y: 0 })}
-              style={{
-                width: 70,
-                height: 70,
-                fontSize: '2.2rem',
-                background: '#222',
-                color: '#0f0',
-                border: '3px solid #0f0',
-                borderRadius: '50%',
-                cursor: 'pointer',
-                fontFamily: 'monospace',
-                touchAction: 'manipulation',
-                boxShadow: '0 0 8px #0f0',
-              }}
-            >
-              →
-            </button>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 8 }}>
-            <button
-              onTouchStart={() => handleTouchDirection({ x: 0, y: 1 })}
-              onMouseDown={() => handleTouchDirection({ x: 0, y: 1 })}
-              style={{
-                width: 70,
-                height: 70,
-                fontSize: '2.2rem',
-                background: '#222',
-                color: '#0f0',
-                border: '3px solid #0f0',
-                borderRadius: '50%',
-                cursor: 'pointer',
-                fontFamily: 'monospace',
-                touchAction: 'manipulation',
-                margin: '0 32px',
-                boxShadow: '0 0 8px #0f0',
-              }}
-            >
-              ↓
-            </button>
-          </div>
-        </div>
+        <MobileControls
+          onUp={() => handleTouchDirection({ x: 0, y: -1 })}
+          onDown={() => handleTouchDirection({ x: 0, y: 1 })}
+          onLeft={() => handleTouchDirection({ x: -1, y: 0 })}
+          onRight={() => handleTouchDirection({ x: 1, y: 0 })}
+        />
       )}
       
       {(!running || gameOver) && (

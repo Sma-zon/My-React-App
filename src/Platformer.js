@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import soundManager from './sounds';
 import { Link } from 'react-router-dom';
+import MobileControls from './MobileControls';
 
 const WIDTH = 800;
 const HEIGHT = 400;
@@ -508,88 +509,33 @@ function Platformer() {
       >
         Back to Main Menu
       </button>
-      <canvas
-        ref={canvasRef}
-        width={WIDTH}
-        height={HEIGHT}
-        style={{ border: '4px solid #0f0', background: '#111', marginBottom: 16 }}
-      />
-      <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>
-        Controls: {isMobile ? 'Touch buttons below' : 'Arrow Keys or WASD, SPACE to jump'}
+      <div style={{ width: '100%', maxWidth: 600, aspectRatio: '2.5', margin: '0 auto', marginBottom: 16 }}>
+        <canvas
+          ref={canvasRef}
+          width={WIDTH}
+          height={HEIGHT}
+          style={{
+            width: '100%',
+            height: 'auto',
+            border: '4px solid #0f0',
+            background: '#111',
+            display: 'block',
+            boxSizing: 'border-box',
+            touchAction: 'manipulation'
+          }}
+        />
       </div>
-      
-      {/* Touch Controls for Mobile */}
-      {isMobile && (
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(3, 1fr)', 
-          gap: 15, 
-          marginBottom: 16,
-          width: 200
-        }}>
-          <div></div>
-          <button
-            onTouchStart={() => handleJump()}
-            onMouseDown={() => handleJump()}
-            style={{
-              width: 60,
-              height: 60,
-              fontSize: '1.5rem',
-              background: '#222',
-              color: '#0f0',
-              border: '3px solid #0f0',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              fontFamily: 'monospace',
-              touchAction: 'manipulation'
-            }}
-          >
-            ↑
-          </button>
-          <div></div>
-          
-          <button
-            onTouchStart={() => gameRef.current.keys['a'] = true}
-            onTouchEnd={() => gameRef.current.keys['a'] = false}
-            onMouseDown={() => gameRef.current.keys['a'] = true}
-            onMouseUp={() => gameRef.current.keys['a'] = false}
-            style={{
-              width: 60,
-              height: 60,
-              fontSize: '1.5rem',
-              background: '#222',
-              color: '#0f0',
-              border: '3px solid #0f0',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              fontFamily: 'monospace',
-              touchAction: 'manipulation'
-            }}
-          >
-            ←
-          </button>
-          <button
-            onTouchStart={() => gameRef.current.keys['d'] = true}
-            onTouchEnd={() => gameRef.current.keys['d'] = false}
-            onMouseDown={() => gameRef.current.keys['d'] = true}
-            onMouseUp={() => gameRef.current.keys['d'] = false}
-            style={{
-              width: 60,
-              height: 60,
-              fontSize: '1.5rem',
-              background: '#222',
-              color: '#0f0',
-              border: '3px solid #0f0',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              fontFamily: 'monospace',
-              touchAction: 'manipulation'
-            }}
-          >
-            →
-          </button>
-          <div></div>
-        </div>
+      <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>
+        Controls: {isMobile ? 'Touch D-pad below' : 'Arrow Keys or WASD, SPACE to jump'}
+      </div>
+      {/* Mobile D-pad Controls */}
+      {isMobile && running && !gameOver && (
+        <MobileControls
+          onUp={handleJump}
+          onDown={undefined}
+          onLeft={() => { gameRef.current.keys['a'] = true; setTimeout(() => { gameRef.current.keys['a'] = false; }, 150); }}
+          onRight={() => { gameRef.current.keys['d'] = true; setTimeout(() => { gameRef.current.keys['d'] = false; }, 150); }}
+        />
       )}
       
       {(!running || gameOver) && (

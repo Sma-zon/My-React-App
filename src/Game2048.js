@@ -241,34 +241,44 @@ function Game2048() {
         textDecoration: 'none',
         boxShadow: '0 0 8px #0f0'
       }}>Back to Main Menu</Link>
-      <div 
-        ref={gameBoardRef}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        style={{
-          display: 'grid',
-          gridTemplateColumns: `repeat(${BOARD_SIZE}, 60px)`,
-          gridTemplateRows: `repeat(${BOARD_SIZE}, 60px)`,
-          gap: 6,
-          marginBottom: 16,
-          touchAction: 'none' // Prevent default touch behaviors
-        }}
-      >
-        {board.flat().map((cell, idx) => (
-          <div key={idx} style={{
-            width: 60,
-            height: 60,
-            background: cell ? '#222' : '#111',
-            color: cell ? '#0f0' : '#333',
-            fontFamily: 'monospace',
-            fontSize: '1.5rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: '2px solid #0f0',
-            textShadow: '1px 1px #000'
-          }}>{cell || ''}</div>
-        ))}
+      <div style={{ width: '100%', maxWidth: 400, margin: '0 auto', marginBottom: 16 }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)`,
+            gap: 8,
+            width: '100%',
+            aspectRatio: '1',
+          }}
+        >
+          {board.map((row, r) =>
+            row.map((cell, c) => (
+              <div
+                key={r + '-' + c}
+                style={{
+                  width: '100%',
+                  aspectRatio: '1',
+                  fontSize: isMobile ? '2.2rem' : '1.5rem',
+                  background: cell ? '#222' : '#111',
+                  color: cell ? '#0f0' : '#333',
+                  border: '3px solid #0f0',
+                  borderRadius: 12,
+                  fontFamily: 'monospace',
+                  touchAction: 'manipulation',
+                  userSelect: 'none',
+                  outline: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: cell ? '0 0 8px #0f0' : undefined,
+                  transition: 'background 0.2s, color 0.2s',
+                }}
+              >
+                {cell || ''}
+              </div>
+            ))
+          )}
+        </div>
       </div>
       <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>Score: {score}</div>
       {gameOver && <div style={{ color: '#f00', fontFamily: 'monospace', marginBottom: 8 }}>Game Over</div>}

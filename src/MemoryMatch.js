@@ -191,43 +191,42 @@ function MemoryMatch() {
       </div>
 
       {/* Memory Grid */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(4, 1fr)', 
-        gap: 8, 
-        marginBottom: 16,
-        maxWidth: '100%',
-        overflow: 'auto'
-      }}>
-        {cards.map(card => (
-          <div
-            key={card.id}
-            onClick={() => handleCardClick(card.id)}
-            style={{
-              width: isMobile ? 60 : 80,
-              height: isMobile ? 60 : 80,
-              background: card.isMatched 
-                ? '#0f0' 
-                : card.isFlipped 
-                  ? '#333' 
-                  : '#111',
-              color: card.isMatched ? '#000' : '#0f0',
-              border: '3px solid #0f0',
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontFamily: 'monospace',
-              fontSize: isMobile ? '1.5rem' : '2rem',
-              cursor: card.isMatched ? 'default' : 'pointer',
-              transition: 'all 0.3s ease',
-              transform: card.isFlipped || card.isMatched ? 'rotateY(0deg)' : 'rotateY(180deg)',
-              touchAction: 'manipulation'
-            }}
-          >
-            {(card.isFlipped || card.isMatched) ? card.symbol : '?'}
-          </div>
-        ))}
+      <div style={{ width: '100%', maxWidth: 400, margin: '0 auto', marginBottom: 16 }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${cols}, 1fr)`,
+            gap: 10,
+            width: '100%',
+            aspectRatio: cols + '/' + rows,
+          }}
+        >
+          {cards.map((card, idx) => (
+            <button
+              key={idx}
+              onClick={() => handleCardClick(idx)}
+              disabled={card.matched || card.flipped || disabled}
+              style={{
+                width: '100%',
+                aspectRatio: '1',
+                fontSize: isMobile ? '2.2rem' : '1.5rem',
+                background: card.flipped || card.matched ? '#0f0' : '#222',
+                color: card.flipped || card.matched ? '#111' : '#0f0',
+                border: '3px solid #0f0',
+                borderRadius: 12,
+                cursor: card.matched ? 'default' : 'pointer',
+                fontFamily: 'monospace',
+                touchAction: 'manipulation',
+                boxShadow: card.flipped ? '0 0 8px #0f0' : undefined,
+                userSelect: 'none',
+                outline: 'none',
+                transition: 'background 0.2s, color 0.2s',
+              }}
+            >
+              {card.flipped || card.matched ? card.value : '?'}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Control Buttons */}

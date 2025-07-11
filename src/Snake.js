@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import soundManager from './sounds';
 import { Link } from 'react-router-dom';
+import MobileControls from './MobileControls';
 
 const WIDTH = 400;
 const HEIGHT = 400;
@@ -230,7 +231,7 @@ function Snake() {
   }, []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
       <h2 style={{ fontFamily: 'monospace', color: '#00ff00', textShadow: '2px 2px #000' }}>Snake</h2>
       <Link to="/" style={{
         display: 'inline-block',
@@ -248,14 +249,24 @@ function Snake() {
         textDecoration: 'none',
         boxShadow: '0 0 8px #0f0'
       }}>Back to Main Menu</Link>
-      <canvas
-        ref={canvasRef}
-        width={WIDTH}
-        height={HEIGHT}
-        style={{ border: '4px solid #0f0', background: '#111', marginBottom: 16 }}
-      />
+      <div style={{ width: '100%', maxWidth: 400, aspectRatio: '1', marginBottom: 16 }}>
+        <canvas
+          ref={canvasRef}
+          width={WIDTH}
+          height={HEIGHT}
+          style={{
+            width: '100%',
+            height: 'auto',
+            border: '4px solid #0f0',
+            background: '#111',
+            display: 'block',
+            boxSizing: 'border-box',
+            touchAction: 'manipulation'
+          }}
+        />
+      </div>
       <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>
-        Controls: W/A/S/D
+        Controls: {isMobile ? 'Touch D-pad below' : 'WASD or Arrow Keys'}
       </div>
       
       {/* Speed Controls */}
@@ -351,92 +362,14 @@ function Snake() {
         {document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}
       </button>
       
-      {/* Touch Controls for Mobile */}
+      {/* Mobile D-pad Controls */}
       {isMobile && running && gameRef.current.alive && (
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(3, 1fr)', 
-          gap: 15, 
-          marginTop: 20,
-          width: 280,
-          padding: '0 20px'
-        }}>
-          <div></div>
-          <button
-            onClick={() => handleTouchDirection('up')}
-            style={{
-              width: 80,
-              height: 80,
-              fontSize: '2rem',
-              background: '#222',
-              color: '#0f0',
-              border: '3px solid #0f0',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              fontFamily: 'monospace',
-              touchAction: 'manipulation'
-            }}
-          >
-            ↑
-          </button>
-          <div></div>
-          
-          <button
-            onClick={() => handleTouchDirection('left')}
-            style={{
-              width: 80,
-              height: 80,
-              fontSize: '2rem',
-              background: '#222',
-              color: '#0f0',
-              border: '3px solid #0f0',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              fontFamily: 'monospace',
-              touchAction: 'manipulation'
-            }}
-          >
-            ←
-          </button>
-          <div></div>
-          <button
-            onClick={() => handleTouchDirection('right')}
-            style={{
-              width: 80,
-              height: 80,
-              fontSize: '2rem',
-              background: '#222',
-              color: '#0f0',
-              border: '3px solid #0f0',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              fontFamily: 'monospace',
-              touchAction: 'manipulation'
-            }}
-          >
-            →
-          </button>
-          
-          <div></div>
-          <button
-            onClick={() => handleTouchDirection('down')}
-            style={{
-              width: 80,
-              height: 80,
-              fontSize: '2rem',
-              background: '#222',
-              color: '#0f0',
-              border: '3px solid #0f0',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              fontFamily: 'monospace',
-              touchAction: 'manipulation'
-            }}
-          >
-            ↓
-          </button>
-          <div></div>
-        </div>
+        <MobileControls
+          onUp={() => handleTouchDirection('up')}
+          onDown={() => handleTouchDirection('down')}
+          onLeft={() => handleTouchDirection('left')}
+          onRight={() => handleTouchDirection('right')}
+        />
       )}
     </div>
   );

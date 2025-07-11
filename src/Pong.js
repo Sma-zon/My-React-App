@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import soundManager from './sounds';
 import { Link } from 'react-router-dom';
+import MobileControls from './MobileControls';
 
 const WIDTH = 600;
 const HEIGHT = 400;
@@ -364,14 +365,24 @@ function Pong() {
         textDecoration: 'none',
         boxShadow: '0 0 8px #0f0'
       }}>Back to Main Menu</Link>
-      <canvas
-        ref={canvasRef}
-        width={WIDTH}
-        height={HEIGHT}
-        style={{ border: '4px solid #0f0', background: '#111', marginBottom: 16 }}
-      />
+      <div style={{ width: '100%', maxWidth: 600, aspectRatio: '2', margin: '0 auto', marginBottom: 16 }}>
+        <canvas
+          ref={canvasRef}
+          width={WIDTH}
+          height={HEIGHT}
+          style={{
+            width: '100%',
+            height: 'auto',
+            border: '4px solid #0f0',
+            background: '#111',
+            display: 'block',
+            boxSizing: 'border-box',
+            touchAction: 'manipulation'
+          }}
+        />
+      </div>
       <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>
-        Controls: W/S (Left Paddle), {mode === 0 ? 'I/K (Right Paddle)' : 'Up/Down (Right Paddle)'} | Press 'M' to change mode
+        Controls: {isMobile ? 'Touch D-pad below' : 'W/S (Left Paddle), I/K or Up/Down (Right Paddle)'}
       </div>
       <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>
         Mode: <b>{modeName}</b> - {modeDesc}
@@ -427,102 +438,20 @@ function Pong() {
       
       {/* Touch Controls for Mobile */}
       {isMobile && mode !== 2 && (
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          width: '100%', 
-          maxWidth: WIDTH,
-          marginTop: 20,
-          padding: '0 20px'
-        }}>
-          {/* Left Paddle Controls */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
-            <button
-              onTouchStart={() => handleTouchStart('left', 'up')}
-              onTouchEnd={() => handleTouchEnd('left', 'up')}
-              onMouseDown={() => handleTouchStart('left', 'up')}
-              onMouseUp={() => handleTouchEnd('left', 'up')}
-              style={{
-                width: 80,
-                height: 80,
-                fontSize: '2rem',
-                background: '#222',
-                color: '#0f0',
-                border: '3px solid #0f0',
-                borderRadius: '50%',
-                cursor: 'pointer',
-                fontFamily: 'monospace',
-                touchAction: 'manipulation'
-              }}
-            >
-              ↑
-            </button>
-            <button
-              onTouchStart={() => handleTouchStart('left', 'down')}
-              onTouchEnd={() => handleTouchEnd('left', 'down')}
-              onMouseDown={() => handleTouchStart('left', 'down')}
-              onMouseUp={() => handleTouchEnd('left', 'down')}
-              style={{
-                width: 80,
-                height: 80,
-                fontSize: '2rem',
-                background: '#222',
-                color: '#0f0',
-                border: '3px solid #0f0',
-                borderRadius: '50%',
-                cursor: 'pointer',
-                fontFamily: 'monospace',
-                touchAction: 'manipulation'
-              }}
-            >
-              ↓
-            </button>
-          </div>
-          
-          {/* Right Paddle Controls (only in 2 Player mode) */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: 600, margin: '0 auto', marginTop: 20, gap: 30 }}>
+          <MobileControls
+            onUp={() => handleTouchStart('left', 'up')}
+            onDown={() => handleTouchStart('left', 'down')}
+            onLeft={undefined}
+            onRight={undefined}
+          />
           {mode === 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
-              <button
-                onTouchStart={() => handleTouchStart('right', 'up')}
-                onTouchEnd={() => handleTouchEnd('right', 'up')}
-                onMouseDown={() => handleTouchStart('right', 'up')}
-                onMouseUp={() => handleTouchEnd('right', 'up')}
-                style={{
-                  width: 80,
-                  height: 80,
-                  fontSize: '2rem',
-                  background: '#222',
-                  color: '#0f0',
-                  border: '3px solid #0f0',
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  fontFamily: 'monospace',
-                  touchAction: 'manipulation'
-                }}
-              >
-                ↑
-              </button>
-              <button
-                onTouchStart={() => handleTouchStart('right', 'down')}
-                onTouchEnd={() => handleTouchEnd('right', 'down')}
-                onMouseDown={() => handleTouchStart('right', 'down')}
-                onMouseUp={() => handleTouchEnd('right', 'down')}
-                style={{
-                  width: 80,
-                  height: 80,
-                  fontSize: '2rem',
-                  background: '#222',
-                  color: '#0f0',
-                  border: '3px solid #0f0',
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  fontFamily: 'monospace',
-                  touchAction: 'manipulation'
-                }}
-              >
-                ↓
-              </button>
-            </div>
+            <MobileControls
+              onUp={() => handleTouchStart('right', 'up')}
+              onDown={() => handleTouchStart('right', 'down')}
+              onLeft={undefined}
+              onRight={undefined}
+            />
           )}
         </div>
       )}

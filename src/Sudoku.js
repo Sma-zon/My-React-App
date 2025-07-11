@@ -292,93 +292,74 @@ function Sudoku() {
       </div>
 
       {/* Sudoku Board */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(9, 1fr)', 
-        gap: 1, 
-        background: '#0f0', 
-        padding: 4,
-        marginBottom: 16,
-        maxWidth: '100%',
-        overflow: 'auto'
-      }}>
-        {board.map((row, rowIndex) => 
-          row.map((cell, colIndex) => (
-            <div
-              key={`${rowIndex}-${colIndex}`}
-              onClick={() => handleCellClick(rowIndex, colIndex)}
-              style={{
-                width: isMobile ? 30 : 40,
-                height: isMobile ? 30 : 40,
-                background: selectedCell?.row === rowIndex && selectedCell?.col === colIndex 
-                  ? '#0f0' 
-                  : originalBoard[rowIndex][colIndex] !== 0 
-                    ? '#333' 
-                    : '#111',
-                color: originalBoard[rowIndex][colIndex] !== 0 ? '#00f' : '#0f0', // Blue for original numbers
-                border: '1px solid #0f0',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: 'monospace',
-                fontSize: isMobile ? '0.8rem' : '1rem',
-                cursor: originalBoard[rowIndex][colIndex] === 0 ? 'pointer' : 'default',
-                fontWeight: 'bold',
-                textShadow: '1px 1px 2px #000' // Add shadow for better visibility
-              }}
-            >
-              {cell !== 0 ? cell : ''}
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Number Pad */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(3, 1fr)', 
-        gap: 8, 
-        marginBottom: 16,
-        width: isMobile ? 200 : 250
-      }}>
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-          <button
-            key={num}
-            onClick={() => handleNumberInput(num)}
-            style={{
-              width: isMobile ? 50 : 60,
-              height: isMobile ? 50 : 60,
-              fontSize: isMobile ? '1.2rem' : '1.5rem',
-              background: '#222',
-              color: '#0f0',
-              border: '3px solid #0f0',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              fontFamily: 'monospace',
-              touchAction: 'manipulation'
-            }}
-          >
-            {num}
-          </button>
-        ))}
-        <button
-          onClick={() => handleNumberInput(0)}
+      <div style={{ width: '100%', maxWidth: 400, margin: '0 auto', marginBottom: 16 }}>
+        <div
           style={{
-            width: isMobile ? 50 : 60,
-            height: isMobile ? 50 : 60,
-            fontSize: isMobile ? '1rem' : '1.2rem',
-            background: '#222',
-            color: '#0f0',
-            border: '3px solid #0f0',
-            borderRadius: '50%',
-            cursor: 'pointer',
-            fontFamily: 'monospace',
-            touchAction: 'manipulation'
+            display: 'grid',
+            gridTemplateColumns: `repeat(9, 1fr)`,
+            gap: 4,
+            width: '100%',
+            aspectRatio: '1',
           }}
         >
-          Clear
-        </button>
+          {board.map((row, r) =>
+            row.map((cell, c) => (
+              <button
+                key={r + '-' + c}
+                onClick={() => handleCellClick(r, c)}
+                disabled={isCellDisabled(r, c)}
+                style={{
+                  width: '100%',
+                  aspectRatio: '1',
+                  fontSize: isMobile ? '1.5rem' : '1.1rem',
+                  background: getCellColor(cell),
+                  color: '#0f0',
+                  border: '2px solid #0f0',
+                  borderRadius: 6,
+                  cursor: isCellDisabled(r, c) ? 'default' : 'pointer',
+                  fontFamily: 'monospace',
+                  touchAction: 'manipulation',
+                  userSelect: 'none',
+                  outline: 'none',
+                  transition: 'background 0.2s',
+                }}
+              >
+                {cell.value || ''}
+              </button>
+            ))
+          )}
+        </div>
       </div>
+      {/* Number pad for mobile */}
+      {isMobile && (
+        <div style={{ width: '100%', maxWidth: 400, margin: '0 auto', marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, width: '100%' }}>
+            {[1,2,3,4,5,6,7,8,9,0].map(num => (
+              <button
+                key={num}
+                onClick={() => handleNumberInput(num)}
+                style={{
+                  width: '100%',
+                  aspectRatio: '1',
+                  fontSize: '1.5rem',
+                  background: '#222',
+                  color: '#0f0',
+                  border: '3px solid #0f0',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  fontFamily: 'monospace',
+                  touchAction: 'manipulation',
+                  userSelect: 'none',
+                  outline: 'none',
+                  marginBottom: 4,
+                }}
+              >
+                {num === 0 ? 'Clear' : num}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Control Buttons */}
       <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>

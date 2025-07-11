@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import soundManager from './sounds';
 import { Link } from 'react-router-dom';
+import MobileControls from './MobileControls';
 
 const BOARD_WIDTH = 10;
 const COLS = 10;
@@ -242,31 +243,37 @@ function Tetris() {
         textDecoration: 'none',
         boxShadow: '0 0 8px #0f0'
       }}>Back to Main Menu</Link>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${COLS}, ${BLOCK}px)`,
-        gridTemplateRows: `repeat(${ROWS}, ${BLOCK}px)`,
-        gap: 1,
-        background: '#111',
-        marginBottom: 16
-      }}>
-        {board.map((row, y) => row.map((cell, x) => {
-          let color = COLORS[cell];
-          // Draw current piece
-          for (let py = 0; py < piece.shape.length; py++) {
-            for (let px = 0; px < piece.shape[py].length; px++) {
-              if (
-                piece.shape[py][px] &&
-                piece.x + px === x &&
-                piece.y + py === y
-              ) {
-                color = COLORS[piece.shape[py][px]];
-              }
-            }
-          }
-          return <div key={x + '-' + y} style={{ width: BLOCK, height: BLOCK, background: color, border: '1px solid #0f0' }} />;
-        }))}
+      <div style={{ width: '100%', maxWidth: 320, aspectRatio: '0.5', margin: '0 auto', marginBottom: 16 }}>
+        <canvas
+          ref={canvasRef}
+          width={WIDTH}
+          height={HEIGHT}
+          style={{
+            width: '100%',
+            height: 'auto',
+            border: '4px solid #0f0',
+            background: '#111',
+            display: 'block',
+            boxSizing: 'border-box',
+            touchAction: 'manipulation'
+          }}
+        />
       </div>
+      <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>
+        Controls: {isMobile ? 'Touch D-pad below (center=rotate)' : 'W/A/S/D'}
+      </div>
+      {/* Mobile D-pad Controls */}
+      {isMobile && running && !gameOver && (
+        <MobileControls
+          onUp={() => handleTouchMove('rotate')}
+          onDown={() => handleTouchMove('down')}
+          onLeft={() => handleTouchMove('left')}
+          onRight={() => handleTouchMove('right')}
+          onCenter={() => handleTouchMove('rotate')}
+          showCenter={true}
+        />
+      )}
+      
       <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>Score: {score}</div>
       {gameOver && <div style={{ color: '#f00', fontFamily: 'monospace', marginBottom: 8 }}>Game Over</div>}
       {(!running || gameOver) && (
@@ -300,91 +307,6 @@ function Tetris() {
         {document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}
       </button>
       
-      {/* Touch Controls for Mobile */}
-      {isMobile && running && !gameOver && (
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(3, 1fr)', 
-          gap: 15, 
-          marginTop: 20,
-          width: 280,
-          padding: '0 20px'
-        }}>
-          <div></div>
-          <button
-            onClick={() => handleTouchMove('rotate')}
-            style={{
-              width: 80,
-              height: 80,
-              fontSize: '1.2rem',
-              background: '#222',
-              color: '#0f0',
-              border: '3px solid #0f0',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              fontFamily: 'monospace',
-              touchAction: 'manipulation'
-            }}
-          >
-            Rotate
-          </button>
-          <div></div>
-          
-          <button
-            onClick={() => handleTouchMove('left')}
-            style={{
-              width: 80,
-              height: 80,
-              fontSize: '2rem',
-              background: '#222',
-              color: '#0f0',
-              border: '3px solid #0f0',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              fontFamily: 'monospace',
-              touchAction: 'manipulation'
-            }}
-          >
-            ←
-          </button>
-          <button
-            onClick={() => handleTouchMove('down')}
-            style={{
-              width: 80,
-              height: 80,
-              fontSize: '2rem',
-              background: '#222',
-              color: '#0f0',
-              border: '3px solid #0f0',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              fontFamily: 'monospace',
-              touchAction: 'manipulation'
-            }}
-          >
-            ↓
-          </button>
-          <button
-            onClick={() => handleTouchMove('right')}
-            style={{
-              width: 80,
-              height: 80,
-              fontSize: '2rem',
-              background: '#222',
-              color: '#0f0',
-              border: '3px solid #0f0',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              fontFamily: 'monospace',
-              touchAction: 'manipulation'
-            }}
-          >
-            →
-          </button>
-        </div>
-      )}
-      
-      <div style={{ color: '#0f0', fontFamily: 'monospace', marginTop: 8 }}>Controls: W/A/S/D</div>
     </div>
   );
 }
