@@ -84,6 +84,11 @@ function Tetris() {
   const interval = useRef();
   const dropTime = useRef(0);
 
+  // Fix: define canvasRef, WIDTH, HEIGHT
+  const canvasRef = useRef(null);
+  const WIDTH = COLS * BLOCK;
+  const HEIGHT = ROWS * BLOCK;
+
   // Check if device is mobile
   useEffect(() => {
     const checkMobile = () => {

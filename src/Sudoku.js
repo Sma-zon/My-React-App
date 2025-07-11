@@ -208,6 +208,20 @@ function Sudoku() {
     }
   };
 
+  // Returns true if the cell is not editable (part of the original puzzle)
+  const isCellDisabled = (row, col) => originalBoard[row][col] !== 0;
+
+  // Returns background color for a cell
+  const getCellColor = (cell, row, col) => {
+    if (selectedCell && selectedCell.row === row && selectedCell.col === col) {
+      return '#0f0'; // Highlight selected cell
+    }
+    if (originalBoard[row][col] !== 0) {
+      return '#333'; // Original numbers
+    }
+    return '#111'; // Editable cells
+  };
+
   // Initialize on first load
   useEffect(() => {
     initializeGame();
@@ -312,7 +326,7 @@ function Sudoku() {
                   width: '100%',
                   aspectRatio: '1',
                   fontSize: isMobile ? '1.5rem' : '1.1rem',
-                  background: getCellColor(cell),
+                  background: getCellColor(cell, r, c),
                   color: '#0f0',
                   border: '2px solid #0f0',
                   borderRadius: 6,

@@ -15,6 +15,11 @@ function MemoryMatch() {
   const [timer, setTimer] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
 
+  // Fix: define cols, rows, and disabled
+  const cols = 6;
+  const rows = 4;
+  const disabled = flippedCards.length === 2;
+
   // Check if device is mobile
   useEffect(() => {
     const checkMobile = () => {
