@@ -154,97 +154,6 @@ function Battleship() {
     setEnemyShips(aiShips);
   };
 
-  // Handle attack
-  const handleAttack = (row, col) => {
-    if (gamePhase !== 'playing') return;
-    
-    // In single player, only player 0 can attack
-    if (mode === 0 && currentPlayer !== 0) return;
-    
-    // In two player, players take turns attacking
-    if (mode === 1 && currentPlayer !== 0 && currentPlayer !== 1) return;
-    
-    const targetBoard = currentPlayer === 0 ? enemyBoard : playerBoard;
-    const targetShips = currentPlayer === 0 ? enemyShips : playerShips;
-    
-    if (targetBoard[row][col] === -1 || targetBoard[row][col] === -2) return; // Already hit
-    
-    const newBoard = targetBoard.map(row => [...row]);
-    const newShips = [...targetShips];
-    
-    if (newBoard[row][col] > 0) {
-      // Hit!
-      soundManager.battleshipHit();
-      
-      // Get the ship index BEFORE modifying the board
-      const shipIndex = newBoard[row][col] - 1;
-      newBoard[row][col] = -1; // Hit marker
-      
-      // Check if ship is sunk
-      const ship = newShips[shipIndex];
-      if (ship && !ship.sunk) {
-        let sunk = true;
-        for (let i = 0; i < ship.size; i++) {
-          const r = ship.orientation === 'horizontal' ? ship.row : ship.row + i;
-          const c = ship.orientation === 'horizontal' ? ship.col + i : ship.col;
-          if (newBoard[r][c] !== -1) {
-            sunk = false;
-            break;
-          }
-        }
-        if (sunk) {
-          soundManager.battleshipSunk();
-          newShips[shipIndex].sunk = true;
-        }
-      }
-      
-      if (currentPlayer === 0) {
-        setPlayerScore(prev => prev + 1);
-        setEnemyBoard(newBoard);
-        setEnemyShips(newShips);
-      } else {
-        setEnemyScore(prev => prev + 1);
-        setPlayerBoard(newBoard);
-        setPlayerShips(newShips);
-      }
-    } else {
-      // Miss
-      soundManager.battleshipMiss();
-      newBoard[row][col] = -2; // Miss marker
-      
-      if (currentPlayer === 0) {
-        setEnemyBoard(newBoard);
-      } else {
-        setPlayerBoard(newBoard);
-      }
-    }
-    
-    // Check for game over
-    const allShipsSunk = newShips.every(ship => ship.sunk);
-    if (allShipsSunk) {
-      setWinner(currentPlayer === 0 ? 'Player 1' : 'Player 2');
-      setGamePhase('gameOver');
-      if (currentPlayer === 0) {
-        soundManager.battleshipWin();
-      } else {
-        soundManager.battleshipLose();
-      }
-      return;
-    }
-    
-    // Switch turns
-    if (mode === 0) {
-      // Single player - AI turn
-      setCurrentPlayer(1);
-      setTimeout(() => {
-        makeAIMove();
-      }, 1000);
-    } else {
-      // Two player - switch players
-      setCurrentPlayer(currentPlayer === 0 ? 1 : 0);
-    }
-  };
-
   // AI move for single player
   const makeAIMove = () => {
     if (gamePhase !== 'playing' || currentPlayer !== 1) return;
@@ -261,11 +170,9 @@ function Battleship() {
     
     if (newBoard[row][col] > 0) {
       soundManager.battleshipHit();
-      
       // Get the ship index BEFORE modifying the board
       const shipIndex = newBoard[row][col] - 1;
       newBoard[row][col] = -1;
-      
       // Check if ship is sunk
       const ship = newShips[shipIndex];
       if (ship && !ship.sunk) {
@@ -283,11 +190,9 @@ function Battleship() {
           newShips[shipIndex].sunk = true;
         }
       }
-      
       setEnemyScore(prev => prev + 1);
-      setPlayerBoard(newBoard);
+      setPlayerBoard(newBoard); // Show hit marker
       setPlayerShips(newShips);
-      
       // Check for game over
       const allShipsSunk = newShips.every(ship => ship.sunk);
       if (allShipsSunk) {
@@ -296,17 +201,91 @@ function Battleship() {
         soundManager.battleshipLose();
         return;
       }
-      
-      // AI gets another turn on hit
-      setTimeout(() => {
-        makeAIMove();
-      }, 1000);
     } else {
       soundManager.battleshipMiss();
       newBoard[row][col] = -2;
       setPlayerBoard(newBoard);
-      setCurrentPlayer(0);
     }
+    // Always return turn to player after AI move
+    setTimeout(() => {
+      setCurrentPlayer(0);
+    }, 700);
+  };
+
+  // In handleAttack, always switch turns after a move (no extra turn for hit)
+  const handleAttack = (row, col) => {
+    if (gamePhase !== 'playing') return;
+    // In single player, only player 0 can attack
+    if (mode === 0 && currentPlayer !== 0) return;
+    // In two player, allow both players to attack
+    if (mode === 1 && currentPlayer !== 0 && currentPlayer !== 1) return;
+    const targetBoard = currentPlayer === 0 ? enemyBoard : playerBoard;
+    const targetShips = currentPlayer === 0 ? enemyShips : playerShips;
+    if (targetBoard[row][col] === -1 || targetBoard[row][col] === -2) return; // Already hit
+    const newBoard = targetBoard.map(row => [...row]);
+    const newShips = [...targetShips];
+    if (newBoard[row][col] > 0) {
+      // Hit!
+      soundManager.battleshipHit();
+      // Get the ship index BEFORE modifying the board
+      const shipIndex = newBoard[row][col] - 1;
+      newBoard[row][col] = -1; // Hit marker
+      // Check if ship is sunk
+      const ship = newShips[shipIndex];
+      if (ship && !ship.sunk) {
+        let sunk = true;
+        for (let i = 0; i < ship.size; i++) {
+          const r = ship.orientation === 'horizontal' ? ship.row : ship.row + i;
+          const c = ship.orientation === 'horizontal' ? ship.col + i : ship.col;
+          if (newBoard[r][c] !== -1) {
+            sunk = false;
+            break;
+          }
+        }
+        if (sunk) {
+          soundManager.battleshipSunk();
+          newShips[shipIndex].sunk = true;
+        }
+      }
+      if (currentPlayer === 0) {
+        setPlayerScore(prev => prev + 1);
+        setEnemyBoard(newBoard);
+        setEnemyShips(newShips);
+      } else {
+        setEnemyScore(prev => prev + 1);
+        setPlayerBoard(newBoard);
+        setPlayerShips(newShips);
+      }
+    } else {
+      // Miss
+      soundManager.battleshipMiss();
+      newBoard[row][col] = -2; // Miss marker
+      if (currentPlayer === 0) {
+        setEnemyBoard(newBoard);
+      } else {
+        setPlayerBoard(newBoard);
+      }
+    }
+    // Check for game over
+    const allShipsSunk = newShips.every(ship => ship.sunk);
+    if (allShipsSunk) {
+      setWinner(currentPlayer === 0 ? 'Player 1' : 'Player 2');
+      setGamePhase('gameOver');
+      if (currentPlayer === 0) {
+        soundManager.battleshipWin();
+      } else {
+        soundManager.battleshipLose();
+      }
+      return;
+    }
+    // Switch turns after a short delay so player can see the result
+    setTimeout(() => {
+      if (mode === 0) {
+        setCurrentPlayer(1); // AI's turn
+      } else {
+        setCurrentPlayer(currentPlayer === 0 ? 1 : 0); // Alternate turns
+      }
+    }, 700);
   };
 
   // Fullscreen functionality
