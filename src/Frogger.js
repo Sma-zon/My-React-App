@@ -39,8 +39,8 @@ function Frogger() {
   // Initialize vehicles
   const initializeVehicles = () => {
     const vehicles = [];
-    const speeds = [0.5, 0.7, 1, 1.2, 1.5, 1.8, 2];
-    const roadLanes = 3; // Lanes per section
+    const speeds = [0.5, 0.7, 1, 1.2, 1.5, 1.8, 2, 1.1, 0.9, 1.3, 0.8, 1.4]; // More speeds for more lanes
+    const roadLanes = 6; // Lanes per section
     const numVehicles = 2;
     // Bottom road section (left to right)
     const bottomRoadStart = ROWS - 7;
@@ -59,9 +59,9 @@ function Frogger() {
       }
     }
     // Middle road section (right to left)
-    const middleRoadStart = Math.floor(ROWS / 2) - 2;
+    const middleRoadStart = Math.floor(ROWS / 2) - 3;
     for (let lane = 0; lane < roadLanes; lane++) {
-      const speed = speeds[(lane + 3) % speeds.length];
+      const speed = speeds[(lane + 6) % speeds.length];
       const direction = -1;
       const y = middleRoadStart + lane;
       for (let i = 0; i < numVehicles; i++) {
