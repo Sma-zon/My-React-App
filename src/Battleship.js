@@ -325,7 +325,17 @@ function Battleship() {
     initializeBoards();
   }, []);
 
-  const renderCell = (board, row, col, isPlayerBoard = false, onClick = null) => {
+  // After setCurrentPlayer(1) in single player mode, trigger AI move with useEffect
+  useEffect(() => {
+    if (mode === 0 && gamePhase === 'playing' && currentPlayer === 1) {
+      setTimeout(() => {
+        makeAIMove();
+      }, 700);
+    }
+  }, [mode, gamePhase, currentPlayer]);
+
+  // Update renderCell to accept a showShips argument
+  const renderCell = (board, row, col, showShips = false, onClick = null) => {
     const cellValue = board[row][col];
     let cellContent = '';
     let cellStyle = {
@@ -353,7 +363,7 @@ function Battleship() {
       cellStyle.color = '#fff';
     } else if (cellValue > 0) {
       // Ship
-      if (isPlayerBoard || gamePhase === 'gameOver') {
+      if (showShips) {
         cellContent = '🚢';
         cellStyle.background = '#0f0';
         cellStyle.color = '#000';
@@ -485,53 +495,90 @@ function Battleship() {
       
       {/* Game Boards */}
       <div style={{ display: 'flex', gap: 20, marginBottom: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-        {/* Player Board */}
-        <div>
-          <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8, textAlign: 'center' }}>
-            Your Fleet
-          </div>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${BOARD_SIZE}, 25px)`,
-            gap: 0,
-            background: '#111',
-            border: '2px solid #0f0'
-          }}>
-            {playerBoard.map((row, rowIndex) => 
-              row.map((cell, colIndex) => renderCell(
-                playerBoard, 
-                rowIndex, 
-                colIndex, 
-                true, 
-                gamePhase === 'setup' ? handleSetupClick : null
-              ))
-            )}
-          </div>
-        </div>
-        
-        {/* Enemy Board */}
-        <div>
-          <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8, textAlign: 'center' }}>
-            Enemy Waters
-          </div>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${BOARD_SIZE}, 25px)`,
-            gap: 0,
-            background: '#111',
-            border: '2px solid #0f0'
-          }}>
-            {enemyBoard.map((row, rowIndex) => 
-              row.map((cell, colIndex) => renderCell(
-                enemyBoard, 
-                rowIndex, 
-                colIndex, 
-                false, 
-                gamePhase === 'playing' && currentPlayer === 0 ? handleAttack : null
-              ))
-            )}
-          </div>
-        </div>
+        {/* During Player 2 setup, show Player 2's board on the right and Player 1's on the left, otherwise normal order */}
+        {mode === 1 && gamePhase === 'setup' && currentPlayer === 1 ? (
+          <>
+            {/* Player 1's Board (hidden) */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 4 }}>
+                Player 1's Waters (Hidden)
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)`, gap: 2 }}>
+                {playerBoard.map((row, rowIndex) =>
+                  row.map((cell, colIndex) =>
+                    renderCell(
+                      playerBoard,
+                      rowIndex,
+                      colIndex,
+                      false,
+                      null
+                    )
+                  )
+                )}
+              </div>
+            </div>
+            {/* Player 2's Board (active) */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 4 }}>
+                Player 2's Waters
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)`, gap: 2 }}>
+                {enemyBoard.map((row, rowIndex) =>
+                  row.map((cell, colIndex) =>
+                    renderCell(
+                      enemyBoard,
+                      rowIndex,
+                      colIndex,
+                      true,
+                      handleSetupClick
+                    )
+                  )
+                )}
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Player Board */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 4 }}>
+                {mode === 1 && gamePhase === 'setup' && currentPlayer === 1 ? "Player 2: Place Your Ships" : "Your Board"}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)`, gap: 2 }}>
+                {playerBoard.map((row, rowIndex) =>
+                  row.map((cell, colIndex) =>
+                    renderCell(
+                      playerBoard,
+                      rowIndex,
+                      colIndex,
+                      (gamePhase === 'setup' && currentPlayer === 0) || (gamePhase === 'setup' && mode === 1 && currentPlayer === 1),
+                      gamePhase === 'setup' && currentPlayer === 0 ? handleSetupClick : null
+                    )
+                  )
+                )}
+              </div>
+            </div>
+            {/* Enemy/Player 2 Board */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 4 }}>
+                {mode === 1 && gamePhase === 'setup' && currentPlayer === 0 ? "Player 1: Place Your Ships" : mode === 1 && gamePhase === 'setup' && currentPlayer === 1 ? "Player 2's Board" : "Enemy Board"}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)`, gap: 2 }}>
+                {enemyBoard.map((row, rowIndex) =>
+                  row.map((cell, colIndex) =>
+                    renderCell(
+                      enemyBoard,
+                      rowIndex,
+                      colIndex,
+                      (gamePhase === 'setup' && currentPlayer === 1),
+                      gamePhase === 'setup' && currentPlayer === 1 ? handleSetupClick : (gamePhase === 'playing' && currentPlayer === 0 ? handleAttack : null)
+                    )
+                  )
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
       
       {/* Game Status */}

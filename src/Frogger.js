@@ -40,16 +40,18 @@ function Frogger() {
   const initializeVehicles = () => {
     const vehicles = [];
     const speeds = [0.5, 0.7, 1, 1.2, 1.5, 1.8, 2]; // Much slower speeds for easier gameplay
+    const roadStart = ROWS - 8; // 7 lanes
+    const roadEnd = ROWS - 1;
     
-    // Create vehicles for each lane (increased from 5 to 7 lanes)
-    for (let lane = 1; lane < 8; lane++) {
-      const speed = speeds[lane - 1];
+    // Create vehicles for each lane (7 lanes)
+    for (let lane = 0; lane < 7; lane++) {
+      const speed = speeds[lane];
       const direction = lane % 2 === 0 ? 1 : -1;
-      const y = ROWS - 2 - lane;
-      
-      for (let i = 0; i < 3; i++) {
+      const y = roadStart + lane;
+      const numVehicles = Math.ceil(COLS / 4);
+      for (let i = 0; i < numVehicles; i++) {
         vehicles.push({
-          x: (i * COLS / 3 + Math.random() * 100) % COLS,
+          x: (i * COLS / numVehicles + Math.random() * 2) % COLS,
           y: y,
           width: 3,
           speed: speed * direction,
@@ -57,32 +59,35 @@ function Frogger() {
         });
       }
     }
-    
     gameRef.current.vehicles = vehicles;
+    gameRef.current.roadStart = roadStart;
+    gameRef.current.roadEnd = roadEnd;
   };
 
   // Initialize logs
   const initializeLogs = () => {
     const logs = [];
-    const speeds = [0.3, 0.5, 0.7, 0.9, 1.1]; // Much slower speeds for easier gameplay
-    
-    // Create logs for water lanes (increased from 5 to 7 lanes)
-    for (let lane = 8; lane < 15; lane++) {
-      const speed = speeds[(lane - 8) % 5];
+    const speeds = [0.3, 0.5, 0.7, 0.9, 1.1, 0.6, 0.8]; // 7 lanes
+    const waterStart = 1;
+    const waterEnd = 8;
+    for (let lane = 0; lane < 7; lane++) {
+      const speed = speeds[lane];
       const direction = lane % 2 === 0 ? 1 : -1;
-      const y = ROWS - 2 - lane;
-      
-      for (let i = 0; i < 3; i++) {
+      const y = waterStart + lane;
+      const logWidth = 5;
+      const numLogs = Math.ceil(COLS / logWidth) + 1;
+      for (let i = 0; i < numLogs; i++) {
         logs.push({
-          x: (i * COLS / 3 + Math.random() * 100) % COLS,
+          x: (i * COLS / numLogs + Math.random() * 2) % COLS,
           y: y,
-          width: 5, // Wider logs that extend to the end
+          width: logWidth,
           speed: speed * direction
         });
       }
     }
-    
     gameRef.current.logs = logs;
+    gameRef.current.waterStart = waterStart;
+    gameRef.current.waterEnd = waterEnd;
   };
 
   // Initialize turtles
@@ -249,13 +254,13 @@ function Frogger() {
       
       // Draw road
       ctx.fillStyle = '#696969';
-      for (let y = ROWS - 7; y < ROWS - 1; y++) {
+      for (let y = gameRef.current.roadStart; y < gameRef.current.roadEnd; y++) {
         ctx.fillRect(0, y * CELL_SIZE, WIDTH, CELL_SIZE);
       }
       
       // Draw water
       ctx.fillStyle = '#4169E1';
-      for (let y = 1; y < ROWS - 7; y++) {
+      for (let y = gameRef.current.waterStart; y < gameRef.current.waterEnd; y++) {
         ctx.fillRect(0, y * CELL_SIZE, WIDTH, CELL_SIZE);
       }
       
@@ -376,7 +381,7 @@ function Frogger() {
       
       // Check if frog is on water
       const frog = gameRef.current.frog;
-      if (frog.y > 0 && frog.y < ROWS - 7) {
+      if (frog.y >= gameRef.current.waterStart && frog.y < gameRef.current.waterEnd) {
         // Check if frog is on a log
         const onLog = gameRef.current.logs.some(log => 
           frog.y === log.y && 
