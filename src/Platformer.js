@@ -28,8 +28,6 @@ const LEVEL = [
   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 ];
 
@@ -123,17 +121,25 @@ function Platformer() {
   const initializeLevel = () => {
     const level = LEVEL.map(row => [...row]);
     
-    // Add some platforms and coins
-    for (let i = 5; i < 35; i += 3) {
+    // Add more platforms and coins for better gameplay
+    for (let i = 5; i < 35; i += 2) {
       level[15][i] = 1; // Platform
-      if (Math.random() > 0.5) {
+      if (Math.random() > 0.3) {
         level[14][i] = 2; // Coin
       }
     }
     
-    // Add some enemies
-    for (let i = 10; i < 30; i += 5) {
-      level[18][i] = 3; // Enemy
+    // Add some floating platforms
+    for (let i = 8; i < 32; i += 4) {
+      level[12][i] = 1; // Higher platform
+      if (Math.random() > 0.5) {
+        level[11][i] = 2; // Coin on higher platform
+      }
+    }
+    
+    // Add some enemies on the ground
+    for (let i = 10; i < 30; i += 6) {
+      level[17][i] = 3; // Enemy on ground
     }
     
     gameRef.current.level = level;
@@ -169,27 +175,21 @@ function Platformer() {
     return gameRef.current.level[tileY][tileX];
   };
 
-  // Screen wrapping function
+  // Screen wrapping function - REMOVED problematic vertical wrapping
   const wrapPosition = (x, y) => {
     const levelWidth = gameRef.current.level[0].length * TILE_SIZE;
-    const levelHeight = gameRef.current.level.length * TILE_SIZE;
     
     let newX = x;
-    let newY = y;
     
-    // Wrap horizontally
+    // Only wrap horizontally, not vertically
     if (x < 0) {
       newX = levelWidth - PLAYER_SIZE;
     } else if (x > levelWidth - PLAYER_SIZE) {
       newX = 0;
     }
     
-    // Wrap vertically (only if falling off bottom)
-    if (y > levelHeight) {
-      newY = 0;
-    }
-    
-    return { x: newX, y: newY };
+    // Don't wrap vertically - let gravity handle falling
+    return { x: newX, y: y };
   };
 
   // Game loop
@@ -336,21 +336,40 @@ function Platformer() {
         player.vy = 0;
       }
       
-      // Check wall collisions - but allow wrapping instead of blocking
+      // Check wall collisions - properly block instead of wrapping
       const leftTop = checkTileCollision(playerLeft, playerTop);
       const leftBottom = checkTileCollision(playerLeft, playerBottom);
       
       if (leftTop === 1 || leftBottom === 1) {
-        // Instead of blocking, wrap to the right side
-        player.x = gameRef.current.level[0].length * TILE_SIZE - PLAYER_SIZE;
+        // Block movement instead of wrapping
+        player.x = Math.floor(playerLeft / TILE_SIZE) * TILE_SIZE + TILE_SIZE;
       }
       
       const rightTop = checkTileCollision(playerRight, playerTop);
       const rightBottom = checkTileCollision(playerRight, playerBottom);
       
       if (rightTop === 1 || rightBottom === 1) {
-        // Instead of blocking, wrap to the left side
-        player.x = 0;
+        // Block movement instead of wrapping
+        player.x = Math.floor(playerRight / TILE_SIZE) * TILE_SIZE - PLAYER_SIZE;
+      }
+      
+      // Check if player fell off the bottom of the screen
+      if (player.y > HEIGHT) {
+        setLives(prev => prev - 1);
+        if (lives <= 1) {
+          setGameOver(true);
+          setRunning(false);
+          soundManager.platformerDeath();
+          return;
+        } else {
+          // Reset player position
+          player.x = 50;
+          player.y = HEIGHT - 60;
+          player.vx = 0;
+          player.vy = 0;
+          soundManager.platformerDeath();
+          return;
+        }
       }
       
       // Check coin collisions (optimized)
