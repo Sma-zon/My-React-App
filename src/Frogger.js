@@ -39,15 +39,32 @@ function Frogger() {
   // Initialize vehicles
   const initializeVehicles = () => {
     const vehicles = [];
-    const speeds = [0.5, 0.7, 1, 1.2, 1.5, 1.8, 2]; // Much slower speeds for easier gameplay
-    const roadStart = ROWS - 8; // 7 lanes
+    const speeds = [0.5, 0.7, 1, 1.2, 1.5, 1.8, 2];
+    const roadLanes = 7; // Total number of lanes
+    const roadStart = ROWS - 8;
     const roadEnd = ROWS - 1;
-    // Fewer cars per lane
-    for (let lane = 0; lane < 7; lane++) {
-      const speed = speeds[lane];
-      const direction = lane % 2 === 0 ? 1 : -1;
+    const numVehicles = 2;
+    const half = Math.floor(roadLanes / 2);
+    // First road section: all cars go left to right
+    for (let lane = 0; lane < half; lane++) {
+      const speed = speeds[lane % speeds.length];
+      const direction = 1;
       const y = roadStart + lane;
-      const numVehicles = 2; // Reduced from Math.ceil(COLS / 4)
+      for (let i = 0; i < numVehicles; i++) {
+        vehicles.push({
+          x: (i * COLS / numVehicles + Math.random() * 2) % COLS,
+          y: y,
+          width: 3,
+          speed: speed * direction,
+          color: `hsl(${Math.random() * 360}, 70%, 50%)`
+        });
+      }
+    }
+    // Second road section: all cars go right to left
+    for (let lane = half; lane < roadLanes; lane++) {
+      const speed = speeds[lane % speeds.length];
+      const direction = -1;
+      const y = roadStart + lane;
       for (let i = 0; i < numVehicles; i++) {
         vehicles.push({
           x: (i * COLS / numVehicles + Math.random() * 2) % COLS,
