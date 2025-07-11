@@ -407,6 +407,9 @@ function Frogger() {
     setRunning(true);
   }
 
+  // Calculate extra margin for mobile controls
+  const canvasMarginBottom = isMobile && running && !gameOver ? 120 : 16;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100vw', minHeight: '100vh', background: '#111' }}>
       <h2 style={{ fontFamily: 'monospace', color: '#00ff00', textShadow: '2px 2px #000', marginTop: 12 }}>Frogger</h2>
@@ -455,7 +458,7 @@ function Frogger() {
       >
         Back to Main Menu
       </button>
-      <div style={{ width: '100%', maxWidth: 600, aspectRatio: '1.2', margin: '0 auto', marginBottom: 16 }}>
+      <div style={{ width: '100%', maxWidth: 600, aspectRatio: '1.2', margin: '0 auto', marginBottom: canvasMarginBottom }}>
         <canvas
           ref={canvasRef}
           width={WIDTH}
