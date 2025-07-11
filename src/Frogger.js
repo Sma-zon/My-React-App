@@ -114,7 +114,8 @@ function Frogger() {
   // Handle keyboard input
   useEffect(() => {
     const handleKeyDown = (e) => {
-      gameRef.current.keys[e.key.toLowerCase()] = true;
+      const key = e.key.toLowerCase();
+      gameRef.current.keys[key] = true;
       
       if (!running || gameOver) return;
       
@@ -122,16 +123,16 @@ function Frogger() {
       let newX = frog.x;
       let newY = frog.y;
       
-      if (e.key === 'ArrowUp' || e.key === 'w') {
+      if (key === 'arrowup' || key === 'w') {
         newY = Math.max(0, frog.y - 1);
         soundManager.froggerJump();
-      } else if (e.key === 'ArrowDown' || e.key === 's') {
+      } else if (key === 'arrowdown' || key === 's') {
         newY = Math.min(ROWS - 1, frog.y + 1);
         soundManager.froggerJump();
-      } else if (e.key === 'ArrowLeft' || e.key === 'a') {
+      } else if (key === 'arrowleft' || key === 'a') {
         newX = Math.max(0, frog.x - 1);
         soundManager.froggerJump();
-      } else if (e.key === 'ArrowRight' || e.key === 'd') {
+      } else if (key === 'arrowright' || key === 'd') {
         newX = Math.min(COLS - 1, frog.x + 1);
         soundManager.froggerJump();
       }
@@ -409,6 +410,30 @@ function Frogger() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100vw', minHeight: '100vh', background: '#111' }}>
       <h2 style={{ fontFamily: 'monospace', color: '#00ff00', textShadow: '2px 2px #000', marginTop: 12 }}>Frogger</h2>
+      {/* Fullscreen Button (moved above canvas) */}
+      <button
+        onClick={() => {
+          soundManager.buttonClick();
+          handleFullscreen();
+        }}
+        style={{
+          fontFamily: 'monospace',
+          fontSize: '1.2rem',
+          background: '#111',
+          color: '#0f0',
+          border: '3px solid #0f0',
+          padding: '12px 24px',
+          cursor: 'pointer',
+          marginTop: 12,
+          marginBottom: 8,
+          touchAction: 'manipulation',
+          boxShadow: '0 0 10px #0f0',
+          borderRadius: '8px',
+          fontWeight: 'bold'
+        }}
+      >
+        {document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}
+      </button>
       <button 
         onClick={() => window.location.href = '/'}
         style={{
@@ -465,30 +490,6 @@ function Frogger() {
         </button>
       )}
       
-      {/* Fullscreen Button */}
-      <button
-        onClick={() => {
-          soundManager.buttonClick();
-          handleFullscreen();
-        }}
-        style={{
-          fontFamily: 'monospace',
-          fontSize: '1.2rem',
-          background: '#111',
-          color: '#0f0',
-          border: '3px solid #0f0',
-          padding: '12px 24px',
-          cursor: 'pointer',
-          marginTop: 12,
-          marginBottom: 8,
-          touchAction: 'manipulation',
-          boxShadow: '0 0 10px #0f0',
-          borderRadius: '8px',
-          fontWeight: 'bold'
-        }}
-      >
-        {document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}
-      </button>
     </div>
   );
 }
