@@ -40,16 +40,14 @@ function Frogger() {
   const initializeVehicles = () => {
     const vehicles = [];
     const speeds = [0.5, 0.7, 1, 1.2, 1.5, 1.8, 2];
-    const roadLanes = 7; // Total number of lanes
-    const roadStart = ROWS - 8;
-    const roadEnd = ROWS - 1;
+    const roadLanes = 3; // Lanes per section
     const numVehicles = 2;
-    const half = Math.floor(roadLanes / 2);
-    // First road section: all cars go left to right
-    for (let lane = 0; lane < half; lane++) {
+    // Bottom road section (left to right)
+    const bottomRoadStart = ROWS - 7;
+    for (let lane = 0; lane < roadLanes; lane++) {
       const speed = speeds[lane % speeds.length];
       const direction = 1;
-      const y = roadStart + lane;
+      const y = bottomRoadStart + lane;
       for (let i = 0; i < numVehicles; i++) {
         vehicles.push({
           x: (i * COLS / numVehicles + Math.random() * 2) % COLS,
@@ -60,11 +58,12 @@ function Frogger() {
         });
       }
     }
-    // Second road section: all cars go right to left
-    for (let lane = half; lane < roadLanes; lane++) {
-      const speed = speeds[lane % speeds.length];
+    // Middle road section (right to left)
+    const middleRoadStart = Math.floor(ROWS / 2) - 2;
+    for (let lane = 0; lane < roadLanes; lane++) {
+      const speed = speeds[(lane + 3) % speeds.length];
       const direction = -1;
-      const y = roadStart + lane;
+      const y = middleRoadStart + lane;
       for (let i = 0; i < numVehicles; i++) {
         vehicles.push({
           x: (i * COLS / numVehicles + Math.random() * 2) % COLS,
@@ -76,8 +75,10 @@ function Frogger() {
       }
     }
     gameRef.current.vehicles = vehicles;
-    gameRef.current.roadStart = roadStart;
-    gameRef.current.roadEnd = roadEnd;
+    gameRef.current.bottomRoadStart = bottomRoadStart;
+    gameRef.current.bottomRoadEnd = bottomRoadStart + roadLanes;
+    gameRef.current.middleRoadStart = middleRoadStart;
+    gameRef.current.middleRoadEnd = middleRoadStart + roadLanes;
   };
 
   // Initialize logs
@@ -271,7 +272,10 @@ function Frogger() {
       
       // Draw road
       ctx.fillStyle = '#696969';
-      for (let y = gameRef.current.roadStart; y < gameRef.current.roadEnd; y++) {
+      for (let y = gameRef.current.bottomRoadStart; y < gameRef.current.bottomRoadEnd; y++) {
+        ctx.fillRect(0, y * CELL_SIZE, WIDTH, CELL_SIZE);
+      }
+      for (let y = gameRef.current.middleRoadStart; y < gameRef.current.middleRoadEnd; y++) {
         ctx.fillRect(0, y * CELL_SIZE, WIDTH, CELL_SIZE);
       }
       
