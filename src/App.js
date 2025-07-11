@@ -36,24 +36,24 @@ function App() {
           <h1 style={{ fontFamily: 'monospace', color: '#00ff00', textShadow: '2px 2px #000' }}>Fun Retro Games</h1>
           <nav>
             <ul style={{ listStyle: 'none', padding: 0 }}>
-              <li><Link to="/pong">Pong</Link></li>
-              <li><Link to="/snake">Snake</Link></li>
-              <li><Link to="/tic-tac-toe">Tic-Tac-Toe</Link></li>
-              <li><Link to="/rock-paper-scissors">Rock Paper Scissors</Link></li>
-              <li><Link to="/simon-says">Simon Says</Link></li>
-              <li><Link to="/2048">2048</Link></li>
-              <li><Link to="/tetris">Tetris</Link></li>
-              <li><Link to="/sidescroller">Mini Sidescroller</Link></li>
-              <li><Link to="/minesweeper">Minesweeper</Link></li>
-              <li><Link to="/battleship">Battleship</Link></li>
-              <li><Link to="/breakout">Breakout</Link></li>
-              <li><Link to="/frogger">Frogger</Link></li>
-              <li><Link to="/sudoku">Sudoku</Link></li>
-              <li><Link to="/memory-match">Memory Match</Link></li>
-              <li><Link to="/word-search">Word Search</Link></li>
-              <li><Link to="/connect-four">Connect Four</Link></li>
-              <li><Link to="/flappy-bird">Flappy Bird</Link></li>
-              <li><a href="https://my-first-react-app-kej4.vercel.app" target="_blank" rel="noopener noreferrer">Upgraded Snake</a></li>
+              <li><Link to="/pong" style={{ color: '#00ff00' }}>Pong</Link></li>
+              <li><Link to="/snake" style={{ color: '#00ff00' }}>Snake</Link></li>
+              <li><Link to="/tic-tac-toe" style={{ color: '#00ff00' }}>Tic-Tac-Toe</Link></li>
+              <li><Link to="/rock-paper-scissors" style={{ color: '#00ff00' }}>Rock Paper Scissors</Link></li>
+              <li><Link to="/simon-says" style={{ color: '#00ff00' }}>Simon Says</Link></li>
+              <li><Link to="/2048" style={{ color: '#00ff00' }}>2048</Link></li>
+              <li><Link to="/tetris" style={{ color: '#00ff00' }}>Tetris</Link></li>
+              <li><Link to="/sidescroller" style={{ color: '#00ff00' }}>Mini Sidescroller</Link></li>
+              <li><Link to="/minesweeper" style={{ color: '#00ff00' }}>Minesweeper</Link></li>
+              <li><Link to="/battleship" style={{ color: '#00ff00' }}>Battleship</Link></li>
+              <li><Link to="/breakout" style={{ color: '#00ff00' }}>Breakout</Link></li>
+              <li><Link to="/frogger" style={{ color: '#00ff00' }}>Frogger</Link></li>
+              <li><Link to="/sudoku" style={{ color: '#00ff00' }}>Sudoku</Link></li>
+              <li><Link to="/memory-match" style={{ color: '#00ff00' }}>Memory Match</Link></li>
+              <li><Link to="/word-search" style={{ color: '#00ff00' }}>Word Search</Link></li>
+              <li><Link to="/connect-four" style={{ color: '#00ff00' }}>Connect Four</Link></li>
+              <li><Link to="/flappy-bird" style={{ color: '#00ff00' }}>Flappy Bird</Link></li>
+              <li><a href="https://my-first-react-app-kej4.vercel.app" target="_blank" rel="noopener noreferrer" style={{ color: '#00ff00' }}>Upgraded Snake</a></li>
             </ul>
           </nav>
           <div style={{ marginTop: 20 }}>
