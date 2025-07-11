@@ -37,12 +37,12 @@ function ConnectFour() {
   };
 
   // Check if column is full
-  const isColumnFull = (col) => {
+  const isColumnFull = (board, col) => {
     return board[0][col] !== 0;
   };
 
   // Get the lowest empty row in a column
-  const getLowestEmptyRow = (col) => {
+  const getLowestEmptyRow = (board, col) => {
     for (let row = ROWS - 1; row >= 0; row--) {
       if (board[row][col] === 0) {
         return row;
@@ -99,8 +99,8 @@ function ConnectFour() {
     let bestMove = 0;
     
     for (let col = 0; col < COLS; col++) {
-      if (!isColumnFull(col)) {
-        const row = getLowestEmptyRow(col);
+      if (!isColumnFull(board, col)) {
+        const row = getLowestEmptyRow(board, col);
         if (row !== -1) {
           const newBoard = board.map(row => [...row]);
           newBoard[row][col] = 2;
@@ -121,8 +121,8 @@ function ConnectFour() {
   const minimax = (board, depth, isMaximizing, alpha, beta) => {
     // Check for terminal states
     for (let col = 0; col < COLS; col++) {
-      if (!isColumnFull(col)) {
-        const row = getLowestEmptyRow(col);
+      if (!isColumnFull(board, col)) {
+        const row = getLowestEmptyRow(board, col);
         if (row !== -1) {
           if (checkWin(board, row, col, 1)) return -1000;
           if (checkWin(board, row, col, 2)) return 1000;
@@ -135,8 +135,8 @@ function ConnectFour() {
     if (isMaximizing) {
       let maxScore = -Infinity;
       for (let col = 0; col < COLS; col++) {
-        if (!isColumnFull(col)) {
-          const row = getLowestEmptyRow(col);
+        if (!isColumnFull(board, col)) {
+          const row = getLowestEmptyRow(board, col);
           if (row !== -1) {
             const newBoard = board.map(row => [...row]);
             newBoard[row][col] = 2;
@@ -151,8 +151,8 @@ function ConnectFour() {
     } else {
       let minScore = Infinity;
       for (let col = 0; col < COLS; col++) {
-        if (!isColumnFull(col)) {
-          const row = getLowestEmptyRow(col);
+        if (!isColumnFull(board, col)) {
+          const row = getLowestEmptyRow(board, col);
           if (row !== -1) {
             const newBoard = board.map(row => [...row]);
             newBoard[row][col] = 1;
@@ -169,11 +169,11 @@ function ConnectFour() {
 
   // Handle column click
   const handleColumnClick = (col) => {
-    if (gameWon || isColumnFull(col) || (gameMode === 'single-player' && currentPlayer === 2 && aiThinking)) {
+    if (gameWon || isColumnFull(board, col) || (gameMode === 'single-player' && currentPlayer === 2 && aiThinking)) {
       return;
     }
 
-    const row = getLowestEmptyRow(col);
+    const row = getLowestEmptyRow(board, col);
     if (row === -1) return;
 
     soundManager.connectFourDrop();
@@ -214,8 +214,8 @@ function ConnectFour() {
   // Separate AI move function to avoid recursive calls
   const makeAIMove = (currentBoard) => {
     const aiCol = getAIMove(currentBoard);
-    if (aiCol !== -1 && !isColumnFull(aiCol)) {
-      const aiRow = getLowestEmptyRow(aiCol);
+    if (aiCol !== -1 && !isColumnFull(currentBoard, aiCol)) {
+      const aiRow = getLowestEmptyRow(currentBoard, aiCol);
       if (aiRow !== -1) {
         const newBoard = currentBoard.map(row => [...row]);
         newBoard[aiRow][aiCol] = 2;
@@ -360,7 +360,7 @@ function ConnectFour() {
                     : '#ffff00',
                 border: '2px solid #0f0',
                 borderRadius: '50%',
-                cursor: isColumnFull(colIndex) ? 'default' : 'pointer',
+                cursor: isColumnFull(board, colIndex) ? 'default' : 'pointer',
                 transition: 'all 0.3s ease',
                 touchAction: 'manipulation'
               }}

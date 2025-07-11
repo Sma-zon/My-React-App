@@ -12,14 +12,12 @@ import Sidescroller from './Sidescroller';
 import Minesweeper from './Minesweeper';
 import Battleship from './Battleship';
 import Breakout from './Breakout';
-import PacMan from './PacMan';
 import Frogger from './Frogger';
 import Sudoku from './Sudoku';
 import MemoryMatch from './MemoryMatch';
 import WordSearch from './WordSearch';
 import ConnectFour from './ConnectFour';
 import FlappyBird from './FlappyBird';
-import Platformer from './Platformer';
 import soundManager from './sounds';
 import { useState } from 'react';
 
@@ -49,14 +47,12 @@ function App() {
               <li><Link to="/minesweeper">Minesweeper</Link></li>
               <li><Link to="/battleship">Battleship</Link></li>
               <li><Link to="/breakout">Breakout</Link></li>
-              <li><Link to="/pacman">Pac-Man</Link></li>
               <li><Link to="/frogger">Frogger</Link></li>
               <li><Link to="/sudoku">Sudoku</Link></li>
               <li><Link to="/memory-match">Memory Match</Link></li>
               <li><Link to="/word-search">Word Search</Link></li>
               <li><Link to="/connect-four">Connect Four</Link></li>
               <li><Link to="/flappy-bird">Flappy Bird</Link></li>
-              <li><Link to="/platformer">Platformer</Link></li>
               <li><a href="https://my-first-react-app-kej4.vercel.app" target="_blank" rel="noopener noreferrer">Upgraded Snake</a></li>
             </ul>
           </nav>
@@ -89,14 +85,12 @@ function App() {
             <Route path="/minesweeper" element={<Minesweeper />} />
             <Route path="/battleship" element={<Battleship />} />
             <Route path="/breakout" element={<Breakout />} />
-            <Route path="/pacman" element={<PacMan />} />
             <Route path="/frogger" element={<Frogger />} />
             <Route path="/sudoku" element={<Sudoku />} />
             <Route path="/memory-match" element={<MemoryMatch />} />
             <Route path="/word-search" element={<WordSearch />} />
             <Route path="/connect-four" element={<ConnectFour />} />
             <Route path="/flappy-bird" element={<FlappyBird />} />
-            <Route path="/platformer" element={<Platformer />} />
             <Route path="/" element={<div>Select a game from the menu!</div>} />
           </Routes>
         </header>
