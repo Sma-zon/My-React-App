@@ -19,7 +19,6 @@ function Frogger() {
     frog: { x: COLS / 2, y: ROWS - 1 },
     vehicles: [],
     logs: [],
-    turtles: [],
     homeSpots: [2, 7, 12, 17, 22],
     occupiedHomes: [],
     level: 1,
@@ -108,31 +107,8 @@ function Frogger() {
     gameRef.current.waterEnd = waterEnd;
   };
 
-  // Initialize turtles
-  const initializeTurtles = () => {
-    const turtles = [];
-    const speeds = [0.2, 0.4, 0.6, 0.8, 1]; // Much slower speeds for easier gameplay
-    
-    // Create turtles for water lanes (increased from 5 to 7 lanes)
-    for (let lane = 8; lane < 15; lane++) {
-      const speed = speeds[(lane - 8) % 5];
-      const direction = lane % 2 === 0 ? 1 : -1;
-      const y = ROWS - 2 - lane;
-      
-      for (let i = 0; i < 2; i++) {
-        turtles.push({
-          x: (i * COLS / 2 + Math.random() * 100) % COLS,
-          y: y,
-          width: 2,
-          speed: speed * direction,
-          diving: false,
-          diveTimer: 0
-        });
-      }
-    }
-    
-    gameRef.current.turtles = turtles;
-  };
+  // Remove turtles entirely
+  // (delete initializeTurtles, turtle drawing, and turtle update logic)
 
   // Handle keyboard input
   useEffect(() => {
@@ -312,14 +288,6 @@ function Frogger() {
         ctx.fillRect(log.x * CELL_SIZE, log.y * CELL_SIZE, log.width * CELL_SIZE, CELL_SIZE);
       });
       
-      // Draw turtles
-      gameRef.current.turtles.forEach(turtle => {
-        if (!turtle.diving) {
-          ctx.fillStyle = '#228B22';
-          ctx.fillRect(turtle.x * CELL_SIZE, turtle.y * CELL_SIZE, turtle.width * CELL_SIZE, CELL_SIZE);
-        }
-      });
-      
       // Draw frog
       const frog = gameRef.current.frog;
       ctx.fillStyle = '#00FF00';
@@ -381,25 +349,6 @@ function Frogger() {
         }
       });
       
-      // Update turtles
-      gameRef.current.turtles.forEach(turtle => {
-        turtle.x += turtle.speed * 0.1;
-        
-        // Wrap around screen
-        if (turtle.speed > 0 && turtle.x > COLS) {
-          turtle.x = -turtle.width;
-        } else if (turtle.speed < 0 && turtle.x < -turtle.width) {
-          turtle.x = COLS;
-        }
-        
-        // Diving animation
-        turtle.diveTimer++;
-        if (turtle.diveTimer > 120) {
-          turtle.diving = !turtle.diving;
-          turtle.diveTimer = 0;
-        }
-      });
-      
       // Check if frog is on water
       const frog = gameRef.current.frog;
       if (frog.y >= gameRef.current.waterStart && frog.y < gameRef.current.waterEnd) {
@@ -410,15 +359,7 @@ function Frogger() {
           frog.x < log.x + log.width
         );
         
-        // Check if frog is on a turtle
-        const onTurtle = gameRef.current.turtles.some(turtle => 
-          !turtle.diving &&
-          frog.y === turtle.y && 
-          frog.x >= turtle.x && 
-          frog.x < turtle.x + turtle.width
-        );
-        
-        if (!onLog && !onTurtle) {
+        if (!onLog) {
           soundManager.froggerDeath();
           setLives(prev => prev - 1);
           if (lives <= 1) {
@@ -455,7 +396,6 @@ function Frogger() {
     soundManager.buttonClick();
     initializeVehicles();
     initializeLogs();
-    initializeTurtles();
     gameRef.current.frog = { x: COLS / 2, y: ROWS - 1 };
     gameRef.current.occupiedHomes = [];
     gameRef.current.level = 1;
