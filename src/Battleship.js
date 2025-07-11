@@ -418,6 +418,7 @@ function Battleship() {
             >
               Single Player
             </button>
+            {/*
             <button
               onClick={() => {
                 soundManager.buttonClick();
@@ -435,6 +436,7 @@ function Battleship() {
             >
               Two Player
             </button>
+            */}
           </div>
         </div>
       )}

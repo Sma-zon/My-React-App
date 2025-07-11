@@ -42,13 +42,12 @@ function Frogger() {
     const speeds = [0.5, 0.7, 1, 1.2, 1.5, 1.8, 2]; // Much slower speeds for easier gameplay
     const roadStart = ROWS - 8; // 7 lanes
     const roadEnd = ROWS - 1;
-    
-    // Create vehicles for each lane (7 lanes)
+    // Fewer cars per lane
     for (let lane = 0; lane < 7; lane++) {
       const speed = speeds[lane];
       const direction = lane % 2 === 0 ? 1 : -1;
       const y = roadStart + lane;
-      const numVehicles = Math.ceil(COLS / 4);
+      const numVehicles = 2; // Reduced from Math.ceil(COLS / 4)
       for (let i = 0; i < numVehicles; i++) {
         vehicles.push({
           x: (i * COLS / numVehicles + Math.random() * 2) % COLS,
@@ -70,12 +69,13 @@ function Frogger() {
     const speeds = [0.3, 0.5, 0.7, 0.9, 1.1, 0.6, 0.8]; // 7 lanes
     const waterStart = 1;
     const waterEnd = 8;
+    // Fewer logs per lane
     for (let lane = 0; lane < 7; lane++) {
       const speed = speeds[lane];
       const direction = lane % 2 === 0 ? 1 : -1;
       const y = waterStart + lane;
       const logWidth = 5;
-      const numLogs = Math.ceil(COLS / logWidth) + 1;
+      const numLogs = 2; // Reduced from Math.ceil(COLS / logWidth) + 1
       for (let i = 0; i < numLogs; i++) {
         logs.push({
           x: (i * COLS / numLogs + Math.random() * 2) % COLS,
