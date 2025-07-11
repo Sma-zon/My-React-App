@@ -46,16 +46,26 @@ function Platformer() {
     keys: {},
     camera: { x: 0 },
     lastTime: 0,
-    frameCount: 0
+    frameCount: 0,
+    lives: 3,
+    score: 0
   });
 
   // Initialize on first load
   useEffect(() => {
+    console.log("Platformer initializing...");
+    if (!canvasRef.current) {
+      console.error("Canvas ref not available");
+      return;
+    }
     initializeLevel();
     setRunning(true);
     setGameOver(false);
+    gameRef.current.score = 0;
+    gameRef.current.lives = 3;
     setScore(0);
     setLives(3);
+    console.log("Platformer initialized successfully");
   }, []);
 
   // Check if device is mobile
@@ -194,15 +204,21 @@ function Platformer() {
 
   // Game loop
   useEffect(() => {
-    if (!running) return;
+    if (!running) {
+      console.log("Game not running");
+      return;
+    }
     
+    console.log("Starting game loop...");
     let animationId;
     function draw() {
-      const ctx = canvasRef.current.getContext('2d');
-      
-      // Clear canvas
-      ctx.fillStyle = '#87CEEB';
-      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+      try {
+        console.log("Drawing frame...");
+        const ctx = canvasRef.current.getContext('2d');
+        
+        // Clear canvas
+        ctx.fillStyle = '#87CEEB';
+        ctx.fillRect(0, 0, WIDTH, HEIGHT);
       
       // Apply camera offset
       ctx.save();
@@ -274,8 +290,12 @@ function Platformer() {
       // Draw UI
       ctx.font = '20px monospace';
       ctx.fillStyle = '#0f0';
-      ctx.fillText(`Score: ${score}`, 10, 30);
-      ctx.fillText(`Lives: ${lives}`, 10, 60);
+      ctx.fillText(`Score: ${gameRef.current.score}`, 10, 30);
+      ctx.fillText(`Lives: ${gameRef.current.lives}`, 10, 60);
+      
+      // Update state to keep UI in sync
+      setScore(gameRef.current.score);
+      setLives(gameRef.current.lives);
       
       if (gameOver) {
         ctx.font = '32px monospace';
@@ -283,7 +303,10 @@ function Platformer() {
         ctx.textAlign = 'center';
         ctx.fillText('Game Over!', WIDTH / 2, HEIGHT / 2);
       }
+    } catch (e) {
+      console.error("Error drawing canvas:", e);
     }
+  }
     
     function update() {
       const player = gameRef.current.player;
@@ -355,8 +378,8 @@ function Platformer() {
       
       // Check if player fell off the bottom of the screen
       if (player.y > HEIGHT) {
-        setLives(prev => prev - 1);
-        if (lives <= 1) {
+        gameRef.current.lives--;
+        if (gameRef.current.lives <= 1) {
           setGameOver(true);
           setRunning(false);
           soundManager.platformerDeath();
@@ -382,7 +405,7 @@ function Platformer() {
             player.y < coin.y + TILE_SIZE &&
             player.y + PLAYER_SIZE > coin.y) {
           coin.collected = true;
-          setScore(prev => prev + 10);
+          gameRef.current.score += 10;
           soundManager.platformerCollect();
         }
       }
@@ -410,8 +433,8 @@ function Platformer() {
             player.x + PLAYER_SIZE > enemy.x &&
             player.y < enemy.y + TILE_SIZE &&
             player.y + PLAYER_SIZE > enemy.y) {
-          setLives(prev => prev - 1);
-          if (lives <= 1) {
+          gameRef.current.lives--;
+          if (gameRef.current.lives <= 1) {
             setGameOver(true);
             setRunning(false);
             soundManager.platformerDeath();
@@ -440,21 +463,22 @@ function Platformer() {
         draw();
         gameRef.current.lastTime = currentTime;
         gameRef.current.frameCount++;
+        console.log("Frame drawn:", gameRef.current.frameCount);
       }
       
       if (!gameOver) animationId = requestAnimationFrame(loop);
     }
     loop();
     return () => cancelAnimationFrame(animationId);
-  }, [running, gameOver, lives, score]);
+  }, [running, gameOver]);
 
   function handleStart() {
     soundManager.buttonClick();
     initializeLevel();
     gameRef.current.player = { x: 50, y: HEIGHT - 60, vx: 0, vy: 0, onGround: false };
     gameRef.current.camera = { x: 0 };
-    setScore(0);
-    setLives(3);
+    gameRef.current.score = 0;
+    gameRef.current.lives = 3;
     setGameOver(false);
     setRunning(true);
   }
