@@ -198,10 +198,11 @@ function ConnectFour() {
     }
 
     // Switch players
-    setCurrentPlayer(currentPlayer === 1 ? 2 : 1);
+    const nextPlayer = currentPlayer === 1 ? 2 : 1;
+    setCurrentPlayer(nextPlayer);
     
     // AI move in single player mode
-    if (gameMode === 'single-player' && currentPlayer === 2 && !gameWon) {
+    if (gameMode === 'single-player' && nextPlayer === 2 && !gameWon) {
       setAiThinking(true);
       setTimeout(() => {
         makeAIMove(newBoard);

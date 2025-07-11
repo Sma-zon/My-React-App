@@ -53,7 +53,6 @@ function Platformer() {
 
   // Initialize on first load
   useEffect(() => {
-    console.log("Platformer initializing...");
     if (!canvasRef.current) {
       console.error("Canvas ref not available");
       return;
@@ -65,7 +64,6 @@ function Platformer() {
     gameRef.current.lives = 3;
     setScore(0);
     setLives(3);
-    console.log("Platformer initialized successfully");
   }, []);
 
   // Check if device is mobile
@@ -205,15 +203,12 @@ function Platformer() {
   // Game loop
   useEffect(() => {
     if (!running) {
-      console.log("Game not running");
       return;
     }
     
-    console.log("Starting game loop...");
     let animationId;
     function draw() {
       try {
-        console.log("Drawing frame...");
         const ctx = canvasRef.current.getContext('2d');
         
         // Clear canvas
@@ -462,8 +457,6 @@ function Platformer() {
         update();
         draw();
         gameRef.current.lastTime = currentTime;
-        gameRef.current.frameCount++;
-        console.log("Frame drawn:", gameRef.current.frameCount);
       }
       
       if (!gameOver) animationId = requestAnimationFrame(loop);

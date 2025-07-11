@@ -83,28 +83,47 @@ function Battleship() {
 
   // Handle ship placement during setup
   const handleSetupClick = (row, col) => {
-    if (gamePhase !== 'setup' || currentPlayer !== 0) return;
+    if (gamePhase !== 'setup') return;
     
-    const result = placeShip(playerBoard, playerShips, row, col, selectedShip, shipOrientation);
-    if (result) {
-      soundManager.battleshipPlace();
-      setPlayerBoard(result.board);
-      setPlayerShips(result.ships);
-      
-      if (selectedShip < SHIPS.length - 1) {
-        setSelectedShip(selectedShip + 1);
-      } else {
-        // Setup complete
-        if (mode === 0) {
-          // Single player - generate AI board
-          generateAIBoard();
-          setGamePhase('playing');
+    // Handle player 1 setup
+    if (currentPlayer === 0) {
+      const result = placeShip(playerBoard, playerShips, row, col, selectedShip, shipOrientation);
+      if (result) {
+        soundManager.battleshipPlace();
+        setPlayerBoard(result.board);
+        setPlayerShips(result.ships);
+        
+        if (selectedShip < SHIPS.length - 1) {
+          setSelectedShip(selectedShip + 1);
         } else {
-          // Two player - switch to player 2
-          setCurrentPlayer(1);
-          setSelectedShip(0);
-          setPlayerShips([]);
-          setPlayerBoard(Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(0)));
+          // Setup complete for player 1
+          if (mode === 0) {
+            // Single player - generate AI board
+            generateAIBoard();
+            setGamePhase('playing');
+          } else {
+            // Two player - switch to player 2
+            setCurrentPlayer(1);
+            setSelectedShip(0);
+            setSetupComplete(true);
+          }
+        }
+      }
+    }
+    // Handle player 2 setup
+    else if (currentPlayer === 1 && mode === 1) {
+      const result = placeShip(enemyBoard, enemyShips, row, col, selectedShip, shipOrientation);
+      if (result) {
+        soundManager.battleshipPlace();
+        setEnemyBoard(result.board);
+        setEnemyShips(result.ships);
+        
+        if (selectedShip < SHIPS.length - 1) {
+          setSelectedShip(selectedShip + 1);
+        } else {
+          // Setup complete for player 2
+          setGamePhase('playing');
+          setCurrentPlayer(0);
         }
       }
     }
@@ -137,7 +156,13 @@ function Battleship() {
 
   // Handle attack
   const handleAttack = (row, col) => {
-    if (gamePhase !== 'playing' || currentPlayer !== 0) return;
+    if (gamePhase !== 'playing') return;
+    
+    // In single player, only player 0 can attack
+    if (mode === 0 && currentPlayer !== 0) return;
+    
+    // In two player, players take turns attacking
+    if (mode === 1 && currentPlayer !== 0 && currentPlayer !== 1) return;
     
     const targetBoard = currentPlayer === 0 ? enemyBoard : playerBoard;
     const targetShips = currentPlayer === 0 ? enemyShips : playerShips;
@@ -197,7 +222,7 @@ function Battleship() {
     // Check for game over
     const allShipsSunk = newShips.every(ship => ship.sunk);
     if (allShipsSunk) {
-      setWinner(currentPlayer === 0 ? 'Player' : 'Enemy');
+      setWinner(currentPlayer === 0 ? 'Player 1' : 'Player 2');
       setGamePhase('gameOver');
       if (currentPlayer === 0) {
         soundManager.battleshipWin();
@@ -215,7 +240,7 @@ function Battleship() {
         makeAIMove();
       }, 1000);
     } else {
-      // Two player
+      // Two player - switch players
       setCurrentPlayer(currentPlayer === 0 ? 1 : 0);
     }
   };

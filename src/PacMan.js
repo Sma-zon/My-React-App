@@ -71,6 +71,15 @@ function PacMan() {
     setGameMap(MAP.map(row => [...row]));
   };
 
+  // Initialize on first load
+  useEffect(() => {
+    initializeMap();
+    setRunning(true);
+    setGameOver(false);
+    setScore(0);
+    setLives(3);
+  }, []);
+
   // Handle keyboard input
   useEffect(() => {
     const handleKeyDown = (e) => {
