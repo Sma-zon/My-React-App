@@ -24,7 +24,8 @@ function FlappyBird() {
     pipes: [],
     keys: {},
     lastTime: 0,
-    frameCount: 0
+    frameCount: 0,
+    currentScore: 0
   });
   
   // Scoreboard functionality
@@ -213,7 +214,7 @@ function FlappyBird() {
           setGameOver(true);
           setRunning(false);
           soundManager.flappyDeath();
-          handleGameOver(score);
+          handleGameOver(gameRef.current.currentScore);
           return;
         }
       }
@@ -227,7 +228,11 @@ function FlappyBird() {
         // Check if bird passed pipe
         if (!pipe.passed && pipe.x + PIPE_WIDTH < bird.x) {
           pipe.passed = true;
-          setScore(prev => prev + 1);
+          setScore(prev => {
+            const newScore = prev + 1;
+            gameRef.current.currentScore = newScore;
+            return newScore;
+          });
           soundManager.flappyScore();
         }
         
@@ -240,7 +245,7 @@ function FlappyBird() {
             setGameOver(true);
             setRunning(false);
             soundManager.flappyDeath();
-            handleGameOver(score);
+            handleGameOver(gameRef.current.currentScore);
             return;
           }
         }
@@ -285,6 +290,7 @@ function FlappyBird() {
     gameRef.current.bird = { x: 100, y: HEIGHT / 2, velocity: 0 };
     initializePipes();
     setScore(0);
+    gameRef.current.currentScore = 0;
     setGameOver(false);
     setRunning(true);
     

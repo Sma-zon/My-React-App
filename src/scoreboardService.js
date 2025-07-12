@@ -56,8 +56,15 @@ class ScoreboardService {
   // Check if a score qualifies for the leaderboard
   isHighScore(gameName, score) {
     const leaderboard = this.getLeaderboard(gameName);
-    if (leaderboard.length < 10) return true;
-    return score > leaderboard[leaderboard.length - 1].score;
+    
+    if (leaderboard.length === 0) {
+      return score > 0; // Any score > 0 is a high score for empty leaderboard
+    }
+    if (leaderboard.length < 10) {
+      return true; // Always true if less than 10 entries
+    }
+    const lowestScore = leaderboard[leaderboard.length - 1].score;
+    return score > lowestScore; // Only true if score is higher than lowest
   }
 
   // Get player's best score for a game

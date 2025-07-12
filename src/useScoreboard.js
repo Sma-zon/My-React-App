@@ -23,7 +23,9 @@ const useScoreboard = (gameName) => {
   const handleGameOver = (score) => {
     setCurrentScore(score);
     
-    if (checkHighScore(score)) {
+    const isHigh = checkHighScore(score);
+    
+    if (isHigh) {
       soundManager.sweep(400, 800, 0.3); // Victory sound
       setShowScoreEntry(true);
     } else {

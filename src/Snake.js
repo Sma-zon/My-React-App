@@ -30,7 +30,8 @@ function Snake() {
     food: { x: 12, y: 10 },
     alive: true,
     pendingDir: null,
-    lastUpdate: 0
+    lastUpdate: 0,
+    currentScore: 0
   });
   const animationRef = useRef(null);
   
@@ -177,7 +178,7 @@ function Snake() {
           soundManager.snakeGameOver();
           gameRef.current.alive = false;
           setRunning(false);
-          handleGameOver(score);
+          handleGameOver(gameRef.current.currentScore);
           return;
         }
       }
@@ -187,7 +188,11 @@ function Snake() {
       if (head.x === gameRef.current.food.x && head.y === gameRef.current.food.y) {
         ate = true;
         soundManager.snakeEat();
-        setScore((s) => s + 1);
+        setScore((s) => {
+          const newScore = s + 1;
+          gameRef.current.currentScore = newScore;
+          return newScore;
+        });
         
         // Place new food
         let newFood;
@@ -240,6 +245,7 @@ function Snake() {
     gameRef.current.alive = true;
     gameRef.current.pendingDir = null;
     setScore(0);
+    gameRef.current.currentScore = 0;
     setRunning(true);
   }
 

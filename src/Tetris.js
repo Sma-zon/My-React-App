@@ -84,6 +84,7 @@ function Tetris() {
   const [isMobile, setIsMobile] = useState(false);
   const interval = useRef();
   const dropTime = useRef(0);
+  const currentScoreRef = useRef(0);
 
   // Fix: define canvasRef, WIDTH, HEIGHT
   const canvasRef = useRef(null);
@@ -163,14 +164,18 @@ function Tetris() {
             soundManager.tetrisLineClear();
           }
           
-          setScore(s => s + lines * 100);
+          setScore(s => {
+            const newScore = s + lines * 100;
+            currentScoreRef.current = newScore;
+            return newScore;
+          });
           const next = randomPiece();
           
           if (!canMove(cleared, next, 0, 0)) {
             soundManager.tetrisGameOver();
             setGameOver(true);
             setBoard(cleared);
-            handleGameOver(score);
+            handleGameOver(currentScoreRef.current);
           } else {
             setBoard(cleared);
             setPiece(next);
@@ -229,6 +234,7 @@ function Tetris() {
     setBoard(Array(ROWS).fill().map(() => Array(COLS).fill(0)));
     setPiece(randomPiece());
     setScore(0);
+    currentScoreRef.current = 0;
     setGameOver(false);
     setRunning(true);
     dropTime.current = 0;

@@ -121,6 +121,7 @@ function Game2048() {
   const [running, setRunning] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const touchStart = useRef({ x: 0, y: 0 });
+  const currentScoreRef = useRef(0);
   
   // Scoreboard functionality
   const {
@@ -178,12 +179,16 @@ function Game2048() {
       
       addRandom(newBoard);
       setBoard(newBoard);
-      setScore(s => s + addScore);
+      setScore(s => {
+        const newScore = s + addScore;
+        currentScoreRef.current = newScore;
+        return newScore;
+      });
       
       if (isGameOver(newBoard)) {
         soundManager.game2048GameOver();
         setGameOver(true);
-        handleGameOver(score + addScore);
+        handleGameOver(currentScoreRef.current);
       }
     }
   }, [board, handleGameOver, score]);
@@ -205,6 +210,7 @@ function Game2048() {
     soundManager.buttonClick();
     setBoard(INIT_BOARD());
     setScore(0);
+    currentScoreRef.current = 0;
     setGameOver(false);
     setRunning(true);
   }
