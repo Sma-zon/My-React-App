@@ -293,7 +293,20 @@ function Snake() {
           }}
         />
       </div>
-      <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>
+      <div style={{ 
+        position: 'fixed', 
+        top: 20, 
+        left: '50%', 
+        transform: 'translateX(-50%)', 
+        zIndex: 1000,
+        color: '#0f0', 
+        fontFamily: 'monospace', 
+        background: 'rgba(0, 0, 0, 0.8)',
+        padding: '8px 16px',
+        borderRadius: 8,
+        border: '2px solid #0f0',
+        fontSize: '0.9rem'
+      }}>
         Controls: {isMobile ? 'Touch D-pad below' : 'WASD or Arrow Keys'}
       </div>
       
@@ -408,12 +421,24 @@ function Snake() {
       
       {/* Mobile D-pad Controls */}
       {isMobile && running && gameRef.current.alive && (
-        <MobileControls
-          onUp={() => handleTouchDirection('up')}
-          onDown={() => handleTouchDirection('down')}
-          onLeft={() => handleTouchDirection('left')}
-          onRight={() => handleTouchDirection('right')}
-        />
+        <div style={{ 
+          position: 'fixed', 
+          bottom: 20, 
+          left: '50%', 
+          transform: 'translateX(-50%)', 
+          zIndex: 1000,
+          background: 'rgba(0, 0, 0, 0.8)',
+          padding: 16,
+          borderRadius: 12,
+          border: '2px solid #0f0'
+        }}>
+          <MobileControls
+            onUp={() => handleTouchDirection('up')}
+            onDown={() => handleTouchDirection('down')}
+            onLeft={() => handleTouchDirection('left')}
+            onRight={() => handleTouchDirection('right')}
+          />
+        </div>
       )}
       
       {/* Score Entry Modal */}

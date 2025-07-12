@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import soundManager from './sounds';
 import { Link } from 'react-router-dom';
 import MobileControls from './MobileControls';
+import useScoreboard from './useScoreboard';
 
 const WIDTH = 600;
 const HEIGHT = 200;
@@ -19,6 +20,20 @@ function Sidescroller() {
   const [running, setRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const currentScoreRef = useRef(0);
+  
+  // Scoreboard functionality
+  const {
+    showScoreEntry,
+    showLeaderboard,
+    handleGameOver,
+    handleScoreSubmit,
+    handleScoreCancel,
+    handleLeaderboardClose,
+    showLeaderboardManually,
+    getTopScore
+  } = useScoreboard('Sidescroller');
+
   const gameRef = useRef({
     playerX: 60,
     playerY: GROUND - PLAYER_SIZE,
@@ -143,17 +158,23 @@ function Sidescroller() {
           soundManager.sidescrollerGameOver();
           setGameOver(true);
           setRunning(false);
+          handleGameOver(currentScoreRef.current);
         }
       }
-      // Score: only increase when player passes over a red block
+      // Score: count up every time you jump over a red block
       for (const obs of gameRef.current.obstacles) {
         if (!obs.scored &&
           gameRef.current.playerX > obs.x + OBSTACLE_WIDTH &&
-          gameRef.current.playerX - SPEED <= obs.x + OBSTACLE_WIDTH
+          gameRef.current.playerX - SPEED <= obs.x + OBSTACLE_WIDTH &&
+          gameRef.current.playerY + PLAYER_SIZE < obs.y // Player is above the obstacle
         ) {
           obs.scored = true;
           soundManager.sidescrollerScore();
-          setScore(s => s + 1);
+          setScore(s => {
+            const newScore = s + 1;
+            currentScoreRef.current = newScore;
+            return newScore;
+          });
         }
       }
       gameRef.current.frame++;
@@ -165,7 +186,7 @@ function Sidescroller() {
     }
     loop();
     return () => cancelAnimationFrame(animationId);
-  }, [running, gameOver]);
+  }, [running, gameOver, handleGameOver]);
 
   function handleStart() {
     soundManager.buttonClick();
@@ -175,6 +196,7 @@ function Sidescroller() {
     gameRef.current.obstacles = [];
     gameRef.current.frame = 0;
     setScore(0);
+    currentScoreRef.current = 0;
     setGameOver(false);
     setRunning(true);
   }
@@ -219,7 +241,20 @@ function Sidescroller() {
           }}
         />
       </div>
-      <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>
+      <div style={{ 
+        position: 'fixed', 
+        top: 20, 
+        left: '50%', 
+        transform: 'translateX(-50%)', 
+        zIndex: 1000,
+        color: '#0f0', 
+        fontFamily: 'monospace', 
+        background: 'rgba(0, 0, 0, 0.8)',
+        padding: '8px 16px',
+        borderRadius: 8,
+        border: '2px solid #0f0',
+        fontSize: '0.9rem'
+      }}>
         Controls: {isMobile ? 'Touch D-pad below' : 'A/D (Move), Space (Jump)'}
       </div>
       {(!running || gameOver) && (
@@ -230,12 +265,24 @@ function Sidescroller() {
       
       {/* Touch Controls for Mobile */}
       {isMobile && running && !gameOver && (
-        <MobileControls
-          onUp={() => { gameRef.current.keys[' '] = true; setTimeout(() => { gameRef.current.keys[' '] = false; }, 150); }}
-          onDown={undefined}
-          onLeft={() => { gameRef.current.keys['a'] = true; setTimeout(() => { gameRef.current.keys['a'] = false; }, 150); }}
-          onRight={() => { gameRef.current.keys['d'] = true; setTimeout(() => { gameRef.current.keys['d'] = false; }, 150); }}
-        />
+        <div style={{ 
+          position: 'fixed', 
+          bottom: 20, 
+          left: '50%', 
+          transform: 'translateX(-50%)', 
+          zIndex: 1000,
+          background: 'rgba(0, 0, 0, 0.8)',
+          padding: 16,
+          borderRadius: 12,
+          border: '2px solid #0f0'
+        }}>
+          <MobileControls
+            onUp={() => { gameRef.current.keys[' '] = true; setTimeout(() => { gameRef.current.keys[' '] = false; }, 150); }}
+            onDown={undefined}
+            onLeft={() => { gameRef.current.keys['a'] = true; setTimeout(() => { gameRef.current.keys['a'] = false; }, 150); }}
+            onRight={() => { gameRef.current.keys['d'] = true; setTimeout(() => { gameRef.current.keys['d'] = false; }, 150); }}
+          />
+        </div>
       )}
 
       {/* Fullscreen Button */}
@@ -262,6 +309,164 @@ function Sidescroller() {
       >
         {document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}
       </button>
+
+      {/* Leaderboard Button */}
+      <button
+        onClick={showLeaderboardManually}
+        style={{
+          fontFamily: 'monospace',
+          fontSize: '1.2rem',
+          background: '#111',
+          color: '#0f0',
+          border: '3px solid #0f0',
+          padding: '12px 24px',
+          cursor: 'pointer',
+          marginTop: 8,
+          marginBottom: 8,
+          touchAction: 'manipulation',
+          boxShadow: '0 0 10px #0f0',
+          borderRadius: '8px',
+          fontWeight: 'bold'
+        }}
+      >
+        🏆 Leaderboard
+      </button>
+
+      {/* Score Entry Modal */}
+      {showScoreEntry && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#111',
+            border: '3px solid #0f0',
+            padding: '24px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            maxWidth: '400px',
+            width: '90%'
+          }}>
+            <h3 style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: '16px' }}>
+              Game Over! Score: {currentScoreRef.current}
+            </h3>
+            <p style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: '16px' }}>
+              Enter your name to save your score:
+            </p>
+            <input
+              type="text"
+              maxLength="20"
+              placeholder="Your name"
+              style={{
+                width: '100%',
+                padding: '8px',
+                marginBottom: '16px',
+                fontFamily: 'monospace',
+                background: '#222',
+                color: '#0f0',
+                border: '2px solid #0f0',
+                borderRadius: '4px'
+              }}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleScoreSubmit(e.target.value);
+                }
+              }}
+            />
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+              <button
+                onClick={() => handleScoreSubmit(document.querySelector('input').value)}
+                style={{
+                  fontFamily: 'monospace',
+                  background: '#0f0',
+                  color: '#000',
+                  border: '2px solid #0f0',
+                  padding: '8px 16px',
+                  cursor: 'pointer',
+                  borderRadius: '4px'
+                }}
+              >
+                Save Score
+              </button>
+              <button
+                onClick={handleScoreCancel}
+                style={{
+                  fontFamily: 'monospace',
+                  background: '#222',
+                  color: '#0f0',
+                  border: '2px solid #0f0',
+                  padding: '8px 16px',
+                  cursor: 'pointer',
+                  borderRadius: '4px'
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leaderboard Modal */}
+      {showLeaderboard && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#111',
+            border: '3px solid #0f0',
+            padding: '24px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            maxWidth: '500px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto'
+          }}>
+            <h3 style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: '16px' }}>
+              🏆 Sidescroller Leaderboard
+            </h3>
+            <div style={{ marginBottom: '16px' }}>
+              {getTopScore() > 0 && (
+                <p style={{ color: '#0f0', fontFamily: 'monospace' }}>
+                  Top Score: {getTopScore()}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={handleLeaderboardClose}
+              style={{
+                fontFamily: 'monospace',
+                background: '#222',
+                color: '#0f0',
+                border: '2px solid #0f0',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                borderRadius: '4px'
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

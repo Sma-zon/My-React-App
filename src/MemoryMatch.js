@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import soundManager from './sounds';
+import useScoreboard from './useScoreboard';
 
 // Card symbols for the memory game
 const CARD_SYMBOLS = ['🎮', '🎲', '🎯', '🎪', '🎨', '🎭', '🎪', '🎯', '🎲', '🎮', '🎨', '🎭'];
@@ -13,6 +14,18 @@ function MemoryMatch() {
   const [isMobile, setIsMobile] = useState(false);
   const [timer, setTimer] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
+  
+  // Scoreboard functionality
+  const {
+    showScoreEntry,
+    showLeaderboard,
+    handleGameOver,
+    handleScoreSubmit,
+    handleScoreCancel,
+    handleLeaderboardClose,
+    showLeaderboardManually,
+    getTopScore
+  } = useScoreboard('MemoryMatch');
 
   // Fix: define cols, rows, and disabled
   const cols = 6;
@@ -112,6 +125,7 @@ function MemoryMatch() {
             setGameWon(true);
             setIsRunning(false);
             soundManager.memoryMatch();
+            handleGameOver(timer);
           }, 1000);
         }
       } else {
@@ -290,6 +304,164 @@ function MemoryMatch() {
       >
         {document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}
       </button>
+
+      {/* Leaderboard Button */}
+      <button
+        onClick={showLeaderboardManually}
+        style={{
+          fontFamily: 'monospace',
+          fontSize: '1.2rem',
+          background: '#111',
+          color: '#0f0',
+          border: '3px solid #0f0',
+          padding: '12px 24px',
+          cursor: 'pointer',
+          marginTop: 8,
+          marginBottom: 8,
+          touchAction: 'manipulation',
+          boxShadow: '0 0 10px #0f0',
+          borderRadius: '8px',
+          fontWeight: 'bold'
+        }}
+      >
+        🏆 Leaderboard
+      </button>
+
+      {/* Score Entry Modal */}
+      {showScoreEntry && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#111',
+            border: '3px solid #0f0',
+            padding: '24px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            maxWidth: '400px',
+            width: '90%'
+          }}>
+            <h3 style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: '16px' }}>
+              🎉 Memory Master! Time: {formatTime(timer)}
+            </h3>
+            <p style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: '16px' }}>
+              Enter your name to save your time:
+            </p>
+            <input
+              type="text"
+              maxLength="20"
+              placeholder="Your name"
+              style={{
+                width: '100%',
+                padding: '8px',
+                marginBottom: '16px',
+                fontFamily: 'monospace',
+                background: '#222',
+                color: '#0f0',
+                border: '2px solid #0f0',
+                borderRadius: '4px'
+              }}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleScoreSubmit(e.target.value);
+                }
+              }}
+            />
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+              <button
+                onClick={() => handleScoreSubmit(document.querySelector('input').value)}
+                style={{
+                  fontFamily: 'monospace',
+                  background: '#0f0',
+                  color: '#000',
+                  border: '2px solid #0f0',
+                  padding: '8px 16px',
+                  cursor: 'pointer',
+                  borderRadius: '4px'
+                }}
+              >
+                Save Time
+              </button>
+              <button
+                onClick={handleScoreCancel}
+                style={{
+                  fontFamily: 'monospace',
+                  background: '#222',
+                  color: '#0f0',
+                  border: '2px solid #0f0',
+                  padding: '8px 16px',
+                  cursor: 'pointer',
+                  borderRadius: '4px'
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leaderboard Modal */}
+      {showLeaderboard && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#111',
+            border: '3px solid #0f0',
+            padding: '24px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            maxWidth: '500px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto'
+          }}>
+            <h3 style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: '16px' }}>
+              🏆 Memory Match Leaderboard
+            </h3>
+            <div style={{ marginBottom: '16px' }}>
+              {getTopScore() > 0 && (
+                <p style={{ color: '#0f0', fontFamily: 'monospace' }}>
+                  Best Time: {formatTime(getTopScore())}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={handleLeaderboardClose}
+              style={{
+                fontFamily: 'monospace',
+                background: '#222',
+                color: '#0f0',
+                border: '2px solid #0f0',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                borderRadius: '4px'
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

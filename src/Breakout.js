@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import soundManager from './sounds';
 import { Link } from 'react-router-dom';
 import MobileControls from './MobileControls'; // (not used, but for consistency)
+import useScoreboard from './useScoreboard';
 
 const WIDTH = 600;
 const HEIGHT = 400;
@@ -21,6 +22,20 @@ function Breakout() {
   const [running, setRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const currentScoreRef = useRef(0);
+  
+  // Scoreboard functionality
+  const {
+    showScoreEntry,
+    showLeaderboard,
+    handleGameOver,
+    handleScoreSubmit,
+    handleScoreCancel,
+    handleLeaderboardClose,
+    showLeaderboardManually,
+    getTopScore
+  } = useScoreboard('Breakout');
+
   const gameRef = useRef({
     paddleX: WIDTH / 2 - PADDLE_WIDTH / 2,
     ballX: WIDTH / 2,
@@ -186,6 +201,7 @@ function Breakout() {
         if (lives <= 1) {
           setGameOver(true);
           setRunning(false);
+          handleGameOver(currentScoreRef.current);
         } else {
           // Reset ball
           gameRef.current.ballX = WIDTH / 2;
@@ -205,7 +221,11 @@ function Breakout() {
           
           soundManager.breakoutBrick();
           brick.alive = false;
-          setScore(prev => prev + 10);
+          setScore(prev => {
+            const newScore = prev + 10;
+            currentScoreRef.current = newScore;
+            return newScore;
+          });
           gameRef.current.ballVY *= -1;
         }
       });
@@ -216,6 +236,7 @@ function Breakout() {
         soundManager.breakoutWin();
         setGameOver(true);
         setRunning(false);
+        handleGameOver(currentScoreRef.current);
       }
     }
     
@@ -226,7 +247,7 @@ function Breakout() {
     }
     loop();
     return () => cancelAnimationFrame(animationId);
-  }, [running, gameOver, lives, score]);
+  }, [running, gameOver, lives, score, handleGameOver]);
 
   function handleStart() {
     soundManager.buttonClick();
@@ -237,6 +258,7 @@ function Breakout() {
     gameRef.current.ballVX = 4;
     gameRef.current.ballVY = -4;
     setScore(0);
+    currentScoreRef.current = 0;
     setLives(3);
     setGameOver(false);
     setRunning(true);
@@ -325,6 +347,164 @@ function Breakout() {
       >
         {document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}
       </button>
+
+      {/* Leaderboard Button */}
+      <button
+        onClick={showLeaderboardManually}
+        style={{
+          fontFamily: 'monospace',
+          fontSize: '1.2rem',
+          background: '#111',
+          color: '#0f0',
+          border: '3px solid #0f0',
+          padding: '12px 24px',
+          cursor: 'pointer',
+          marginTop: 8,
+          marginBottom: 8,
+          touchAction: 'manipulation',
+          boxShadow: '0 0 10px #0f0',
+          borderRadius: '8px',
+          fontWeight: 'bold'
+        }}
+      >
+        🏆 Leaderboard
+      </button>
+
+      {/* Score Entry Modal */}
+      {showScoreEntry && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#111',
+            border: '3px solid #0f0',
+            padding: '24px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            maxWidth: '400px',
+            width: '90%'
+          }}>
+            <h3 style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: '16px' }}>
+              Game Over! Score: {currentScoreRef.current}
+            </h3>
+            <p style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: '16px' }}>
+              Enter your name to save your score:
+            </p>
+            <input
+              type="text"
+              maxLength="20"
+              placeholder="Your name"
+              style={{
+                width: '100%',
+                padding: '8px',
+                marginBottom: '16px',
+                fontFamily: 'monospace',
+                background: '#222',
+                color: '#0f0',
+                border: '2px solid #0f0',
+                borderRadius: '4px'
+              }}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleScoreSubmit(e.target.value);
+                }
+              }}
+            />
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+              <button
+                onClick={() => handleScoreSubmit(document.querySelector('input').value)}
+                style={{
+                  fontFamily: 'monospace',
+                  background: '#0f0',
+                  color: '#000',
+                  border: '2px solid #0f0',
+                  padding: '8px 16px',
+                  cursor: 'pointer',
+                  borderRadius: '4px'
+                }}
+              >
+                Save Score
+              </button>
+              <button
+                onClick={handleScoreCancel}
+                style={{
+                  fontFamily: 'monospace',
+                  background: '#222',
+                  color: '#0f0',
+                  border: '2px solid #0f0',
+                  padding: '8px 16px',
+                  cursor: 'pointer',
+                  borderRadius: '4px'
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leaderboard Modal */}
+      {showLeaderboard && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#111',
+            border: '3px solid #0f0',
+            padding: '24px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            maxWidth: '500px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto'
+          }}>
+            <h3 style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: '16px' }}>
+              🏆 Breakout Leaderboard
+            </h3>
+            <div style={{ marginBottom: '16px' }}>
+              {getTopScore() > 0 && (
+                <p style={{ color: '#0f0', fontFamily: 'monospace' }}>
+                  Top Score: {getTopScore()}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={handleLeaderboardClose}
+              style={{
+                fontFamily: 'monospace',
+                background: '#222',
+                color: '#0f0',
+                border: '2px solid #0f0',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                borderRadius: '4px'
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

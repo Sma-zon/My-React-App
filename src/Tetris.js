@@ -20,6 +20,17 @@ const SHAPES = [
   [[0, 7, 7], [7, 7, 0]] // Z
 ];
 
+const COLORS = [
+  '#000',
+  '#00f5ff', // I - cyan
+  '#ffff00', // O - yellow
+  '#a000f0', // T - purple
+  '#0000f0', // J - blue
+  '#f0a000', // L - orange
+  '#00f000', // S - green
+  '#f00000'  // Z - red
+];
+
 function randomPiece() {
   const type = Math.floor(Math.random() * (SHAPES.length - 1)) + 1;
   return { type, shape: SHAPES[type], x: 3, y: 0 };
@@ -78,6 +89,7 @@ function clearLines(board) {
 function Tetris() {
   const [board, setBoard] = useState(Array(ROWS).fill().map(() => Array(COLS).fill(0)));
   const [piece, setPiece] = useState(randomPiece());
+  const [nextPiece, setNextPiece] = useState(randomPiece());
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [running, setRunning] = useState(false);
@@ -112,6 +124,73 @@ function Tetris() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Drawing functions
+  const drawBlock = useCallback((ctx, x, y, color) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(x * BLOCK, y * BLOCK, BLOCK, BLOCK);
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x * BLOCK, y * BLOCK, BLOCK, BLOCK);
+  }, []);
+
+  const drawBoard = useCallback((ctx) => {
+    // Clear canvas
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    
+    // Draw board
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        if (board[y][x]) {
+          drawBlock(ctx, x, y, COLORS[board[y][x]]);
+        }
+      }
+    }
+  }, [board, drawBlock]);
+
+  const drawPiece = useCallback((ctx, piece) => {
+    for (let y = 0; y < piece.shape.length; y++) {
+      for (let x = 0; x < piece.shape[y].length; x++) {
+        if (piece.shape[y][x]) {
+          drawBlock(ctx, piece.x + x, piece.y + y, COLORS[piece.shape[y][x]]);
+        }
+      }
+    }
+  }, [drawBlock]);
+
+  const drawNextPiece = useCallback((ctx) => {
+    // Draw next piece preview
+    const previewX = 2;
+    const previewY = 2;
+    
+    for (let y = 0; y < nextPiece.shape.length; y++) {
+      for (let x = 0; x < nextPiece.shape[y].length; x++) {
+        if (nextPiece.shape[y][x]) {
+          drawBlock(ctx, previewX + x, previewY + y, COLORS[nextPiece.shape[y][x]]);
+        }
+      }
+    }
+  }, [nextPiece, drawBlock]);
+
+  // Render function
+  const render = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    drawBoard(ctx);
+    if (running && !gameOver) {
+      drawPiece(ctx, piece);
+    }
+  }, [drawBoard, drawPiece, piece, running, gameOver]);
+
+  // Render on state changes
+  useEffect(() => {
+    render();
+  }, [render]);
 
   // Keyboard controls
   useEffect(() => {
@@ -169,16 +248,19 @@ function Tetris() {
             currentScoreRef.current = newScore;
             return newScore;
           });
-          const next = randomPiece();
           
-          if (!canMove(cleared, next, 0, 0)) {
+          // Use next piece and generate new next piece
+          const newNextPiece = randomPiece();
+          setPiece(nextPiece);
+          setNextPiece(newNextPiece);
+          
+          if (!canMove(cleared, nextPiece, 0, 0)) {
             soundManager.tetrisGameOver();
             setGameOver(true);
             setBoard(cleared);
             handleGameOver(currentScoreRef.current);
           } else {
             setBoard(cleared);
-            setPiece(next);
           }
         }
       }
@@ -193,7 +275,7 @@ function Tetris() {
         cancelAnimationFrame(interval.current);
       }
     };
-  }, [board, piece, gameOver, running, handleGameOver, score]);
+  }, [board, piece, nextPiece, gameOver, running, handleGameOver, score]);
 
   // Touch controls
   const handleTouchMove = useCallback((direction) => {
@@ -233,6 +315,7 @@ function Tetris() {
     soundManager.buttonClick();
     setBoard(Array(ROWS).fill().map(() => Array(COLS).fill(0)));
     setPiece(randomPiece());
+    setNextPiece(randomPiece());
     setScore(0);
     currentScoreRef.current = 0;
     setGameOver(false);
@@ -268,35 +351,105 @@ function Tetris() {
         textDecoration: 'none',
         boxShadow: '0 0 8px #0f0'
       }}>Back to Main Menu</Link>
-      <div style={{ width: '100%', maxWidth: 320, aspectRatio: '0.5', margin: '0 auto', marginBottom: 16 }}>
-        <canvas
-          ref={canvasRef}
-          width={WIDTH}
-          height={HEIGHT}
-          style={{
-            width: '100%',
-            height: 'auto',
-            border: '4px solid #0f0',
-            background: '#111',
-            display: 'block',
-            boxSizing: 'border-box',
-            touchAction: 'manipulation'
-          }}
-        />
+      
+      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+        {/* Main Game Canvas */}
+        <div style={{ width: '100%', maxWidth: 320, aspectRatio: '0.5', margin: '0 auto', marginBottom: 16 }}>
+          <canvas
+            ref={canvasRef}
+            width={WIDTH}
+            height={HEIGHT}
+            style={{
+              width: '100%',
+              height: 'auto',
+              border: '4px solid #0f0',
+              background: '#111',
+              display: 'block',
+              boxSizing: 'border-box',
+              touchAction: 'manipulation'
+            }}
+          />
+        </div>
+        
+        {/* Next Piece Preview */}
+        <div style={{ 
+          width: 120, 
+          height: 120, 
+          border: '3px solid #0f0', 
+          background: '#111',
+          padding: 8,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center'
+        }}>
+          <div style={{ color: '#0f0', fontFamily: 'monospace', fontSize: '0.8rem', marginBottom: 8 }}>
+            Next:
+          </div>
+          <canvas
+            width={96}
+            height={96}
+            style={{
+              width: '100%',
+              height: 'auto',
+              background: '#111',
+              display: 'block'
+            }}
+            ref={(canvas) => {
+              if (canvas) {
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                  // Clear canvas
+                  ctx.fillStyle = '#111';
+                  ctx.fillRect(0, 0, 96, 96);
+                  
+                  // Draw next piece
+                  drawNextPiece(ctx);
+                }
+              }
+            }}
+          />
+        </div>
       </div>
-      <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>
+      
+      <div style={{ 
+        position: 'fixed', 
+        top: 20, 
+        left: '50%', 
+        transform: 'translateX(-50%)', 
+        zIndex: 1000,
+        color: '#0f0', 
+        fontFamily: 'monospace', 
+        background: 'rgba(0, 0, 0, 0.8)',
+        padding: '8px 16px',
+        borderRadius: 8,
+        border: '2px solid #0f0',
+        fontSize: '0.9rem'
+      }}>
         Controls: {isMobile ? 'Touch D-pad below (center=rotate)' : 'W/A/S/D'}
       </div>
+      
       {/* Mobile D-pad Controls */}
       {isMobile && running && !gameOver && (
-        <MobileControls
-          onUp={() => handleTouchMove('rotate')}
-          onDown={() => handleTouchMove('down')}
-          onLeft={() => handleTouchMove('left')}
-          onRight={() => handleTouchMove('right')}
-          onCenter={() => handleTouchMove('rotate')}
-          showCenter={true}
-        />
+        <div style={{ 
+          position: 'fixed', 
+          bottom: 20, 
+          left: '50%', 
+          transform: 'translateX(-50%)', 
+          zIndex: 1000,
+          background: 'rgba(0, 0, 0, 0.8)',
+          padding: 16,
+          borderRadius: 12,
+          border: '2px solid #0f0'
+        }}>
+          <MobileControls
+            onUp={() => handleTouchMove('rotate')}
+            onDown={() => handleTouchMove('down')}
+            onLeft={() => handleTouchMove('left')}
+            onRight={() => handleTouchMove('right')}
+            onCenter={() => handleTouchMove('rotate')}
+            showCenter={true}
+          />
+        </div>
       )}
       
       <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>Score: {score}</div>

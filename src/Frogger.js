@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import soundManager from './sounds';
 import MobileControls from './MobileControls';
+import useScoreboard from './useScoreboard';
 
 const WIDTH = 600;
 const HEIGHT = 600;
@@ -15,6 +16,20 @@ function Frogger() {
   const [running, setRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const currentScoreRef = useRef(0);
+  
+  // Scoreboard functionality
+  const {
+    showScoreEntry,
+    showLeaderboard,
+    handleGameOver,
+    handleScoreSubmit,
+    handleScoreCancel,
+    handleLeaderboardClose,
+    showLeaderboardManually,
+    getTopScore
+  } = useScoreboard('Frogger');
+
   const gameRef = useRef({
     frog: { x: COLS / 2, y: ROWS - 1 },
     vehicles: [],
@@ -146,7 +161,11 @@ function Frogger() {
           const homeIndex = Math.floor(frog.x / 5);
           if (homeIndex >= 0 && homeIndex < 5 && !gameRef.current.occupiedHomes.includes(homeIndex)) {
             gameRef.current.occupiedHomes.push(homeIndex);
-            setScore(prev => prev + 100);
+            setScore(prev => {
+              const newScore = prev + 100;
+              currentScoreRef.current = newScore;
+              return newScore;
+            });
             soundManager.froggerHome();
             
             // Reset frog position
@@ -157,7 +176,11 @@ function Frogger() {
             if (gameRef.current.occupiedHomes.length === 5) {
               gameRef.current.level++;
               gameRef.current.occupiedHomes = [];
-              setScore(prev => prev + 500);
+              setScore(prev => {
+                const newScore = prev + 500;
+                currentScoreRef.current = newScore;
+                return newScore;
+              });
               soundManager.froggerLevel();
             }
           }
@@ -331,6 +354,7 @@ function Frogger() {
           if (lives <= 1) {
             setGameOver(true);
             setRunning(false);
+            handleGameOver(currentScoreRef.current);
           } else {
             frog.x = COLS / 2;
             frog.y = ROWS - 1;
@@ -366,6 +390,7 @@ function Frogger() {
           if (lives <= 1) {
             setGameOver(true);
             setRunning(false);
+            handleGameOver(currentScoreRef.current);
           } else {
             frog.x = COLS / 2;
             frog.y = ROWS - 1;
@@ -391,7 +416,7 @@ function Frogger() {
     }
     loop();
     return () => cancelAnimationFrame(animationId);
-  }, [running, gameOver, lives, score]);
+  }, [running, gameOver, lives, score, handleGameOver]);
 
   function handleStart() {
     soundManager.buttonClick();
@@ -401,13 +426,14 @@ function Frogger() {
     gameRef.current.occupiedHomes = [];
     gameRef.current.level = 1;
     setScore(0);
+    currentScoreRef.current = 0;
     setLives(3);
     setGameOver(false);
     setRunning(true);
   }
 
-  // Calculate extra margin for mobile controls
-  const canvasMarginBottom = isMobile && running && !gameOver ? 120 : 16;
+  // Fixed margin for consistent layout
+  const canvasMarginBottom = 16;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100vw', minHeight: '100vh', background: '#111' }}>
@@ -473,23 +499,207 @@ function Frogger() {
           }}
         />
       </div>
-      <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8, textAlign: 'center' }}>
+      <div style={{ 
+        position: 'fixed', 
+        top: 20, 
+        left: '50%', 
+        transform: 'translateX(-50%)', 
+        zIndex: 1000,
+        color: '#0f0', 
+        fontFamily: 'monospace', 
+        background: 'rgba(0, 0, 0, 0.8)',
+        padding: '8px 16px',
+        borderRadius: 8,
+        border: '2px solid #0f0',
+        fontSize: '0.9rem',
+        textAlign: 'center'
+      }}>
         Controls: {isMobile ? 'Touch D-pad below' : 'Arrow Keys or WASD'}
       </div>
       {/* Mobile D-pad Controls */}
       {isMobile && running && !gameOver && (
-        <MobileControls
-          onUp={() => handleTouchDirection({ x: 0, y: -1 })}
-          onDown={() => handleTouchDirection({ x: 0, y: 1 })}
-          onLeft={() => handleTouchDirection({ x: -1, y: 0 })}
-          onRight={() => handleTouchDirection({ x: 1, y: 0 })}
-        />
+        <div style={{ 
+          position: 'fixed', 
+          bottom: 20, 
+          left: '50%', 
+          transform: 'translateX(-50%)', 
+          zIndex: 1000,
+          background: 'rgba(0, 0, 0, 0.8)',
+          padding: 16,
+          borderRadius: 12,
+          border: '2px solid #0f0'
+        }}>
+          <MobileControls
+            onUp={() => handleTouchDirection({ x: 0, y: -1 })}
+            onDown={() => handleTouchDirection({ x: 0, y: 1 })}
+            onLeft={() => handleTouchDirection({ x: -1, y: 0 })}
+            onRight={() => handleTouchDirection({ x: 1, y: 0 })}
+          />
+        </div>
       )}
       
       {(!running || gameOver) && (
         <button onClick={handleStart} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
           {score === 0 ? 'Start' : 'Restart'}
         </button>
+      )}
+
+      {/* Leaderboard Button */}
+      <button
+        onClick={showLeaderboardManually}
+        style={{
+          fontFamily: 'monospace',
+          fontSize: '1.2rem',
+          background: '#111',
+          color: '#0f0',
+          border: '3px solid #0f0',
+          padding: '12px 24px',
+          cursor: 'pointer',
+          marginTop: 8,
+          marginBottom: 8,
+          touchAction: 'manipulation',
+          boxShadow: '0 0 10px #0f0',
+          borderRadius: '8px',
+          fontWeight: 'bold'
+        }}
+      >
+        🏆 Leaderboard
+      </button>
+
+      {/* Score Entry Modal */}
+      {showScoreEntry && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#111',
+            border: '3px solid #0f0',
+            padding: '24px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            maxWidth: '400px',
+            width: '90%'
+          }}>
+            <h3 style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: '16px' }}>
+              Game Over! Score: {currentScoreRef.current}
+            </h3>
+            <p style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: '16px' }}>
+              Enter your name to save your score:
+            </p>
+            <input
+              type="text"
+              maxLength="20"
+              placeholder="Your name"
+              style={{
+                width: '100%',
+                padding: '8px',
+                marginBottom: '16px',
+                fontFamily: 'monospace',
+                background: '#222',
+                color: '#0f0',
+                border: '2px solid #0f0',
+                borderRadius: '4px'
+              }}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleScoreSubmit(e.target.value);
+                }
+              }}
+            />
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+              <button
+                onClick={() => handleScoreSubmit(document.querySelector('input').value)}
+                style={{
+                  fontFamily: 'monospace',
+                  background: '#0f0',
+                  color: '#000',
+                  border: '2px solid #0f0',
+                  padding: '8px 16px',
+                  cursor: 'pointer',
+                  borderRadius: '4px'
+                }}
+              >
+                Save Score
+              </button>
+              <button
+                onClick={handleScoreCancel}
+                style={{
+                  fontFamily: 'monospace',
+                  background: '#222',
+                  color: '#0f0',
+                  border: '2px solid #0f0',
+                  padding: '8px 16px',
+                  cursor: 'pointer',
+                  borderRadius: '4px'
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leaderboard Modal */}
+      {showLeaderboard && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#111',
+            border: '3px solid #0f0',
+            padding: '24px',
+            borderRadius: '8px',
+            textAlign: 'center',
+            maxWidth: '500px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto'
+          }}>
+            <h3 style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: '16px' }}>
+              🏆 Frogger Leaderboard
+            </h3>
+            <div style={{ marginBottom: '16px' }}>
+              {getTopScore() > 0 && (
+                <p style={{ color: '#0f0', fontFamily: 'monospace' }}>
+                  Top Score: {getTopScore()}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={handleLeaderboardClose}
+              style={{
+                fontFamily: 'monospace',
+                background: '#222',
+                color: '#0f0',
+                border: '2px solid #0f0',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                borderRadius: '4px'
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
       )}
       
     </div>
