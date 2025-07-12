@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import soundManager from './sounds';
-import { Link } from 'react-router-dom';
 
 // Card symbols for the memory game
 const CARD_SYMBOLS = ['🎮', '🎲', '🎯', '🎪', '🎨', '🎭', '🎪', '🎯', '🎲', '🎮', '🎨', '🎭'];

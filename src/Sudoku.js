@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import soundManager from './sounds';
-import { Link } from 'react-router-dom';
 
 // Sample Sudoku puzzles for each difficulty
 const SUDOKU_PUZZLES = {
@@ -225,7 +224,7 @@ function Sudoku() {
   // Initialize on first load
   useEffect(() => {
     initializeGame();
-  }, []);
+  }, [initializeGame]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import soundManager from './sounds';
 import { Link } from 'react-router-dom';
 import MobileControls from './MobileControls';
+import useScoreboard from './useScoreboard';
+import ScoreEntry from './ScoreEntry';
+import Leaderboard from './Leaderboard';
 
-const BOARD_WIDTH = 10;
 const COLS = 10;
 const ROWS = 20;
 const BLOCK = 24;
-const COLORS = ['#000', '#0ff', '#ff0', '#f0f', '#0f0', '#f00', '#00f', '#fa0'];
 const SHAPES = [
   [],
   [[1, 1, 1, 1]], // I
@@ -88,6 +89,18 @@ function Tetris() {
   const canvasRef = useRef(null);
   const WIDTH = COLS * BLOCK;
   const HEIGHT = ROWS * BLOCK;
+  
+  // Scoreboard functionality
+  const {
+    showScoreEntry,
+    showLeaderboard,
+    handleGameOver,
+    handleScoreSubmit,
+    handleScoreCancel,
+    handleLeaderboardClose,
+    showLeaderboardManually,
+    getTopScore
+  } = useScoreboard('Tetris');
 
   // Check if device is mobile
   useEffect(() => {
@@ -157,6 +170,7 @@ function Tetris() {
             soundManager.tetrisGameOver();
             setGameOver(true);
             setBoard(cleared);
+            handleGameOver(score);
           } else {
             setBoard(cleared);
             setPiece(next);
@@ -174,7 +188,7 @@ function Tetris() {
         cancelAnimationFrame(interval.current);
       }
     };
-  }, [board, piece, gameOver, running]);
+  }, [board, piece, gameOver, running, handleGameOver, score]);
 
   // Touch controls
   const handleTouchMove = useCallback((direction) => {
@@ -280,12 +294,29 @@ function Tetris() {
       )}
       
       <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>Score: {score}</div>
+      <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>High Score: {getTopScore()}</div>
       {gameOver && <div style={{ color: '#f00', fontFamily: 'monospace', marginBottom: 8 }}>Game Over</div>}
-      {(!running || gameOver) && (
-        <button onClick={handleStart} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
-          {score === 0 ? 'Start' : 'Restart'}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        {(!running || gameOver) && (
+          <button onClick={handleStart} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
+            {score === 0 ? 'Start' : 'Restart'}
+          </button>
+        )}
+        <button
+          onClick={showLeaderboardManually}
+          style={{
+            fontFamily: 'monospace',
+            fontSize: '1rem',
+            background: '#222',
+            color: '#0f0',
+            border: '2px solid #0f0',
+            padding: '8px 16px',
+            cursor: 'pointer'
+          }}
+        >
+          Leaderboard
         </button>
-      )}
+      </div>
       
       {/* Fullscreen Button */}
       <button
@@ -312,6 +343,23 @@ function Tetris() {
         {document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}
       </button>
       
+      {/* Score Entry Modal */}
+      {showScoreEntry && (
+        <ScoreEntry
+          score={score}
+          gameName="Tetris"
+          onSubmit={handleScoreSubmit}
+          onCancel={handleScoreCancel}
+        />
+      )}
+      
+      {/* Leaderboard Modal */}
+      {showLeaderboard && (
+        <Leaderboard
+          gameName="Tetris"
+          onClose={handleLeaderboardClose}
+        />
+      )}
     </div>
   );
 }

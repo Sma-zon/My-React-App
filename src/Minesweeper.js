@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import soundManager from './sounds';
-import { Link } from 'react-router-dom';
 
 const BOARD_SIZE = 10;
 const MINES_COUNT = 15;

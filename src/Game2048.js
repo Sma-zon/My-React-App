@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import soundManager from './sounds';
 import { Link } from 'react-router-dom';
+import useScoreboard from './useScoreboard';
+import ScoreEntry from './ScoreEntry';
+import Leaderboard from './Leaderboard';
 
 const BOARD_SIZE = 4;
 const INIT_BOARD = () => {
@@ -118,7 +121,18 @@ function Game2048() {
   const [running, setRunning] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const touchStart = useRef({ x: 0, y: 0 });
-  const gameBoardRef = useRef(null);
+  
+  // Scoreboard functionality
+  const {
+    showScoreEntry,
+    showLeaderboard,
+    handleGameOver,
+    handleScoreSubmit,
+    handleScoreCancel,
+    handleLeaderboardClose,
+    showLeaderboardManually,
+    getTopScore
+  } = useScoreboard('2048');
 
   // Check if device is mobile
   useEffect(() => {
@@ -150,7 +164,7 @@ function Game2048() {
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [board, gameOver, running]);
+  }, [board, gameOver, running, handleMove]);
 
   // Handle move logic
   const handleMove = useCallback((dir) => {
@@ -169,39 +183,12 @@ function Game2048() {
       if (isGameOver(newBoard)) {
         soundManager.game2048GameOver();
         setGameOver(true);
+        handleGameOver(score + addScore);
       }
     }
-  }, [board]);
+  }, [board, handleGameOver, score]);
 
-  // Touch controls
-  const handleTouchStart = useCallback((e) => {
-    if (!running || gameOver) return;
-    const touch = e.touches[0];
-    touchStart.current = { x: touch.clientX, y: touch.clientY };
-  }, [running, gameOver]);
 
-  const handleTouchEnd = useCallback((e) => {
-    if (!running || gameOver) return;
-    
-    const touch = e.changedTouches[0];
-    const deltaX = touch.clientX - touchStart.current.x;
-    const deltaY = touch.clientY - touchStart.current.y;
-    const minSwipeDistance = 30;
-
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      // Horizontal swipe
-      if (Math.abs(deltaX) > minSwipeDistance) {
-        const dir = deltaX > 0 ? 'right' : 'left';
-        handleMove(dir);
-      }
-    } else {
-      // Vertical swipe
-      if (Math.abs(deltaY) > minSwipeDistance) {
-        const dir = deltaY > 0 ? 'down' : 'up';
-        handleMove(dir);
-      }
-    }
-  }, [running, gameOver, handleMove]);
 
   // Fullscreen functionality
   const handleFullscreen = () => {
@@ -281,12 +268,29 @@ function Game2048() {
         </div>
       </div>
       <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>Score: {score}</div>
+      <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>High Score: {getTopScore()}</div>
       {gameOver && <div style={{ color: '#f00', fontFamily: 'monospace', marginBottom: 8 }}>Game Over</div>}
-      {(!running || gameOver) && (
-        <button onClick={handleStart} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
-          {score === 0 ? 'Start' : 'Restart'}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        {(!running || gameOver) && (
+          <button onClick={handleStart} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
+            {score === 0 ? 'Start' : 'Restart'}
+          </button>
+        )}
+        <button
+          onClick={showLeaderboardManually}
+          style={{
+            fontFamily: 'monospace',
+            fontSize: '1rem',
+            background: '#222',
+            color: '#0f0',
+            border: '2px solid #0f0',
+            padding: '8px 16px',
+            cursor: 'pointer'
+          }}
+        >
+          Leaderboard
         </button>
-      )}
+      </div>
       
       {/* Fullscreen Button */}
       <button
@@ -316,6 +320,24 @@ function Game2048() {
       <div style={{ color: '#0f0', fontFamily: 'monospace', marginTop: 8 }}>
         Controls: {isMobile ? 'Swipe to move' : 'W/A/S/D'}
       </div>
+      
+      {/* Score Entry Modal */}
+      {showScoreEntry && (
+        <ScoreEntry
+          score={score}
+          gameName="2048"
+          onSubmit={handleScoreSubmit}
+          onCancel={handleScoreCancel}
+        />
+      )}
+      
+      {/* Leaderboard Modal */}
+      {showLeaderboard && (
+        <Leaderboard
+          gameName="2048"
+          onClose={handleLeaderboardClose}
+        />
+      )}
     </div>
   );
 }

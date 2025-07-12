@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import soundManager from './sounds';
-import { Link } from 'react-router-dom';
 
 // Word lists for different difficulties
 const WORD_LISTS = {
@@ -280,7 +279,7 @@ function WordSearch() {
   // Initialize on first load
   useEffect(() => {
     initializeGame();
-  }, []);
+  }, [initializeGame]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

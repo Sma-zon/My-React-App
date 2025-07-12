@@ -2,6 +2,9 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import soundManager from './sounds';
 import { Link } from 'react-router-dom';
 import MobileControls from './MobileControls';
+import useScoreboard from './useScoreboard';
+import ScoreEntry from './ScoreEntry';
+import Leaderboard from './Leaderboard';
 
 const WIDTH = 400;
 const HEIGHT = 400;
@@ -30,6 +33,18 @@ function Snake() {
     lastUpdate: 0
   });
   const animationRef = useRef(null);
+  
+  // Scoreboard functionality
+  const {
+    showScoreEntry,
+    showLeaderboard,
+    handleGameOver,
+    handleScoreSubmit,
+    handleScoreCancel,
+    handleLeaderboardClose,
+    showLeaderboardManually,
+    getTopScore
+  } = useScoreboard('Snake');
 
   // Check if device is mobile
   useEffect(() => {
@@ -122,6 +137,12 @@ function Snake() {
       ctx.textAlign = 'left';
       ctx.fillText('Score: ' + score, 10, 30);
       
+      // High Score
+      const topScore = getTopScore();
+      if (topScore > 0) {
+        ctx.fillText('High Score: ' + topScore, 10, 55);
+      }
+      
       if (!gameRef.current.alive) {
         ctx.font = '32px monospace';
         ctx.fillStyle = '#f00';
@@ -156,6 +177,7 @@ function Snake() {
           soundManager.snakeGameOver();
           gameRef.current.alive = false;
           setRunning(false);
+          handleGameOver(score);
           return;
         }
       }
@@ -209,7 +231,7 @@ function Snake() {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [score, running]);
+  }, [score, running, getTopScore, handleGameOver, speed]);
 
   function handleStart() {
     gameRef.current.snake = [...INIT_SNAKE];
@@ -328,14 +350,30 @@ function Snake() {
           </button>
         </div>
       </div>
-      {(!running || !gameRef.current.alive) && (
-        <button onClick={() => {
-          soundManager.buttonClick();
-          handleStart();
-        }} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
-          {score === 0 ? 'Start' : 'Restart'}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        {(!running || !gameRef.current.alive) && (
+          <button onClick={() => {
+            soundManager.buttonClick();
+            handleStart();
+          }} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
+            {score === 0 ? 'Start' : 'Restart'}
+          </button>
+        )}
+        <button
+          onClick={showLeaderboardManually}
+          style={{
+            fontFamily: 'monospace',
+            fontSize: '1rem',
+            background: '#222',
+            color: '#0f0',
+            border: '2px solid #0f0',
+            padding: '8px 16px',
+            cursor: 'pointer'
+          }}
+        >
+          Leaderboard
         </button>
-      )}
+      </div>
       
       {/* Fullscreen Button */}
       <button
@@ -369,6 +407,24 @@ function Snake() {
           onDown={() => handleTouchDirection('down')}
           onLeft={() => handleTouchDirection('left')}
           onRight={() => handleTouchDirection('right')}
+        />
+      )}
+      
+      {/* Score Entry Modal */}
+      {showScoreEntry && (
+        <ScoreEntry
+          score={score}
+          gameName="Snake"
+          onSubmit={handleScoreSubmit}
+          onCancel={handleScoreCancel}
+        />
+      )}
+      
+      {/* Leaderboard Modal */}
+      {showLeaderboard && (
+        <Leaderboard
+          gameName="Snake"
+          onClose={handleLeaderboardClose}
         />
       )}
     </div>

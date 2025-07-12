@@ -383,20 +383,6 @@ class SoundManager {
     setTimeout(() => this.beep(200, 0.2, 'sawtooth'), 100);
   }
 
-  // Flappy Bird sounds
-  flappyJump() {
-    this.beep(400, 0.1, 'sine');
-  }
-
-  flappyScore() {
-    this.beep(600, 0.08, 'triangle');
-  }
-
-  flappyDeath() {
-    this.noise(0.3);
-    setTimeout(() => this.beep(200, 0.2, 'sawtooth'), 100);
-  }
-
   toggleSound() {
     this.enabled = !this.enabled;
     if (this.enabled && this.audioContext && this.audioContext.state === 'suspended') {

@@ -1,4 +1,3 @@
-import logo from './logo.svg';
 import './App.css';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Pong from './Pong';
@@ -19,14 +18,21 @@ import WordSearch from './WordSearch';
 import ConnectFour from './ConnectFour';
 import FlappyBird from './FlappyBird';
 import soundManager from './sounds';
+import GlobalLeaderboard from './GlobalLeaderboard';
 import { useState } from 'react';
 
 function App() {
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
+  const [showGlobalLeaderboard, setShowGlobalLeaderboard] = useState(false);
 
   const toggleSound = () => {
     setIsSoundEnabled(!isSoundEnabled);
     soundManager.toggleSound();
+  };
+
+  const showLeaderboard = () => {
+    soundManager.buttonClick();
+    setShowGlobalLeaderboard(true);
   };
 
   return (
@@ -56,7 +62,7 @@ function App() {
               <li><a href="https://my-first-react-app-kej4.vercel.app" target="_blank" rel="noopener noreferrer" style={{ color: '#00ff00' }}>Upgraded Snake</a></li>
             </ul>
           </nav>
-          <div style={{ marginTop: 20 }}>
+          <div style={{ marginTop: 20, display: 'flex', gap: 12, justifyContent: 'center' }}>
             <button 
               onClick={toggleSound}
               style={{
@@ -71,6 +77,21 @@ function App() {
               }}
             >
               {isSoundEnabled ? '🔊 Disable Sound' : '🔇 Enable Sound'}
+            </button>
+            <button 
+              onClick={showLeaderboard}
+              style={{
+                fontFamily: 'monospace',
+                fontSize: '1rem',
+                background: '#111',
+                color: '#0f0',
+                border: '2px solid #0f0',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                borderRadius: '4px'
+              }}
+            >
+              🏆 Global Leaderboards
             </button>
           </div>
           <Routes>
@@ -93,6 +114,11 @@ function App() {
             <Route path="/flappy-bird" element={<FlappyBird />} />
             <Route path="/" element={<div>Select a game from the menu!</div>} />
           </Routes>
+          
+          {/* Global Leaderboard Modal */}
+          {showGlobalLeaderboard && (
+            <GlobalLeaderboard onClose={() => setShowGlobalLeaderboard(false)} />
+          )}
         </header>
       </div>
     </Router>

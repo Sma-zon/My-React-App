@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import soundManager from './sounds';
-import { Link } from 'react-router-dom';
+import useScoreboard from './useScoreboard';
+import ScoreEntry from './ScoreEntry';
+import Leaderboard from './Leaderboard';
 
 const WIDTH = 600;
 const HEIGHT = 400;
@@ -24,6 +26,18 @@ function FlappyBird() {
     lastTime: 0,
     frameCount: 0
   });
+  
+  // Scoreboard functionality
+  const {
+    showScoreEntry,
+    showLeaderboard,
+    handleGameOver,
+    handleScoreSubmit,
+    handleScoreCancel,
+    handleLeaderboardClose,
+    showLeaderboardManually,
+    getTopScore
+  } = useScoreboard('Flappy Bird');
 
   // Check if device is mobile
   useEffect(() => {
@@ -102,26 +116,7 @@ function FlappyBird() {
     gameRef.current.pipes = pipes;
   };
 
-  // Check collision
-  const checkCollision = (bird, pipe) => {
-    const birdLeft = bird.x - BIRD_SIZE / 2;
-    const birdRight = bird.x + BIRD_SIZE / 2;
-    const birdTop = bird.y - BIRD_SIZE / 2;
-    const birdBottom = bird.y + BIRD_SIZE / 2;
-    
-    const pipeLeft = pipe.x;
-    const pipeRight = pipe.x + PIPE_WIDTH;
-    
-    // Check if bird is within pipe's x-range
-    if (birdRight > pipeLeft && birdLeft < pipeRight) {
-      // Check if bird hits top or bottom pipe
-      if (birdTop < pipe.topHeight || birdBottom > pipe.bottomY) {
-        return true;
-      }
-    }
-    
-    return false;
-  };
+
 
   // Game loop
   useEffect(() => {
@@ -187,7 +182,7 @@ function FlappyBird() {
       ctx.fillStyle = '#0f0';
       ctx.textAlign = 'center';
       ctx.fillText(`Score: ${score}`, WIDTH / 2, 30);
-      ctx.fillText(`High Score: ${highScore}`, WIDTH / 2, 60);
+      ctx.fillText(`High Score: ${getTopScore()}`, WIDTH / 2, 60);
       
       if (gameOver) {
         ctx.font = '32px monospace';
@@ -218,6 +213,7 @@ function FlappyBird() {
           setGameOver(true);
           setRunning(false);
           soundManager.flappyDeath();
+          handleGameOver(score);
           return;
         }
       }
@@ -244,6 +240,7 @@ function FlappyBird() {
             setGameOver(true);
             setRunning(false);
             soundManager.flappyDeath();
+            handleGameOver(score);
             return;
           }
         }
@@ -281,7 +278,7 @@ function FlappyBird() {
     }
     loop();
     return () => cancelAnimationFrame(animationId);
-  }, [running, gameOver, score, highScore]);
+  }, [running, gameOver, score, highScore, getTopScore, handleGameOver]);
 
   function handleStart() {
     soundManager.buttonClick();
@@ -300,8 +297,8 @@ function FlappyBird() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <h2 style={{ fontFamily: 'monospace', color: '#00ff00', textShadow: '2px 2px #000' }}>Flappy Bird</h2>
-      <button 
-        onClick={() => window.location.href = '/'}
+      <a 
+        href="/"
         style={{
           display: 'inline-block',
           marginBottom: 16,
@@ -320,7 +317,7 @@ function FlappyBird() {
         }}
       >
         Back to Main Menu
-      </button>
+      </a>
       <canvas
         ref={canvasRef}
         width={WIDTH}
@@ -332,11 +329,27 @@ function FlappyBird() {
         Controls: {isMobile ? 'Tap to jump' : 'SPACE or Arrow Up to jump'}
       </div>
       
-      {(!running || gameOver) && (
-        <button onClick={handleStart} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
-          {score === 0 ? 'Start' : 'Restart'}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        {(!running || gameOver) && (
+          <button onClick={handleStart} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
+            {score === 0 ? 'Start' : 'Restart'}
+          </button>
+        )}
+        <button
+          onClick={showLeaderboardManually}
+          style={{
+            fontFamily: 'monospace',
+            fontSize: '1rem',
+            background: '#222',
+            color: '#0f0',
+            border: '2px solid #0f0',
+            padding: '8px 16px',
+            cursor: 'pointer'
+          }}
+        >
+          Leaderboard
         </button>
-      )}
+      </div>
       
       {/* Fullscreen Button */}
       <button
@@ -362,6 +375,24 @@ function FlappyBird() {
       >
         {document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}
       </button>
+      
+      {/* Score Entry Modal */}
+      {showScoreEntry && (
+        <ScoreEntry
+          score={score}
+          gameName="Flappy Bird"
+          onSubmit={handleScoreSubmit}
+          onCancel={handleScoreCancel}
+        />
+      )}
+      
+      {/* Leaderboard Modal */}
+      {showLeaderboard && (
+        <Leaderboard
+          gameName="Flappy Bird"
+          onClose={handleLeaderboardClose}
+        />
+      )}
     </div>
   );
 }
