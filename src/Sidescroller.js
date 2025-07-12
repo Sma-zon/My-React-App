@@ -103,8 +103,8 @@ function Sidescroller() {
       ctx.fillStyle = '#ff0';
       ctx.fillRect(gameRef.current.playerX, gameRef.current.playerY, PLAYER_SIZE, PLAYER_SIZE);
       // Obstacles
-      ctx.fillStyle = '#f00';
       for (const obs of gameRef.current.obstacles) {
+        ctx.fillStyle = obs.isYellow ? '#ff0' : '#f00';
         ctx.fillRect(obs.x, obs.y, OBSTACLE_WIDTH, OBSTACLE_HEIGHT);
       }
       // Score
@@ -140,7 +140,15 @@ function Sidescroller() {
       }
       // Obstacles
       if (gameRef.current.frame % 60 === 0) {
-        gameRef.current.obstacles.push({ x: WIDTH, y: GROUND - OBSTACLE_HEIGHT, scored: false });
+        // 10% chance for yellow block (worth 3 points), 90% chance for red block (worth 1 point)
+        const isYellow = Math.random() < 0.1;
+        gameRef.current.obstacles.push({ 
+          x: WIDTH, 
+          y: GROUND - OBSTACLE_HEIGHT, 
+          scored: false, 
+          isYellow: isYellow,
+          points: isYellow ? 3 : 1
+        });
       }
       for (const obs of gameRef.current.obstacles) {
         obs.x -= SPEED;
@@ -161,7 +169,7 @@ function Sidescroller() {
           handleGameOver(currentScoreRef.current);
         }
       }
-      // Score: count up every time you jump over a red block
+      // Score: count up every time you jump over a block
       for (const obs of gameRef.current.obstacles) {
         if (!obs.scored &&
           gameRef.current.playerX > obs.x + OBSTACLE_WIDTH &&
@@ -171,7 +179,7 @@ function Sidescroller() {
           obs.scored = true;
           soundManager.sidescrollerScore();
           setScore(s => {
-            const newScore = s + 1;
+            const newScore = s + obs.points;
             currentScoreRef.current = newScore;
             return newScore;
           });

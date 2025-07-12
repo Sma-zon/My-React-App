@@ -32,6 +32,10 @@ function Pong() {
   const [hitCount, setHitCount] = useState(0);
   const [ballSpeed, setBallSpeed] = useState(BALL_SPEED);
   const [isMobile, setIsMobile] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [showStartButton, setShowStartButton] = useState(true);
+  
   const gameRef = useRef({
     leftY: HEIGHT / 2 - PADDLE_HEIGHT / 2,
     rightY: HEIGHT / 2 - PADDLE_HEIGHT / 2,
@@ -112,6 +116,44 @@ function Pong() {
     }
   };
 
+  // Start game with countdown
+  const handleStart = () => {
+    soundManager.buttonClick();
+    setShowStartButton(false);
+    setCountdown(3);
+    
+    const countdownInterval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval);
+          setRunning(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  // Reset game
+  const handleReset = () => {
+    setRunning(false);
+    setShowStartButton(true);
+    setCountdown(0);
+    gameRef.current.leftScore = 0;
+    gameRef.current.rightScore = 0;
+    resetBall(1);
+  };
+
+  const resetBall = (dir) => {
+    gameRef.current.ballX = WIDTH / 2 - BALL_SIZE / 2;
+    gameRef.current.ballY = HEIGHT / 2 - BALL_SIZE / 2;
+    gameRef.current.ballVX = gameRef.current.ballSpeed * dir;
+    gameRef.current.ballVY = gameRef.current.ballSpeed * (Math.random() > 0.5 ? 1 : -1);
+    gameRef.current.hitCount = 0;
+    gameRef.current.ballSpeed = BALL_SPEED;
+    setBallSpeed(BALL_SPEED);
+  };
+
   useEffect(() => {
     let animationId;
     const ctx = canvasRef.current.getContext('2d');
@@ -159,38 +201,48 @@ function Pong() {
       ctx.fillStyle = '#0f0';
       ctx.fillRect(WIDTH - PADDLE_WIDTH, rightY, PADDLE_WIDTH, PADDLE_HEIGHT);
       
-      // Ball with enhanced visuals
-      const ballX = gameRef.current.ballX;
-      const ballY = gameRef.current.ballY;
-      
-      // Ball shadow
-      ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
-      ctx.beginPath();
-      ctx.arc(ballX + 2, ballY + 2, BALL_SIZE / 2, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Ball glow
-      ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
-      ctx.beginPath();
-      ctx.arc(ballX, ballY, BALL_SIZE, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Ball
-      ctx.fillStyle = '#0f0';
-      ctx.beginPath();
-      ctx.arc(ballX, ballY, BALL_SIZE / 2, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Ball trail
-      const trailLength = 5;
-      for (let i = 1; i <= trailLength; i++) {
-        const alpha = 0.3 - (i * 0.05);
-        const size = (BALL_SIZE / 2) - (i * 0.5);
-        ctx.fillStyle = `rgba(0, 255, 0, ${alpha})`;
+      // Ball with enhanced visuals (only if running)
+      if (running) {
+        const ballX = gameRef.current.ballX;
+        const ballY = gameRef.current.ballY;
+        
+        // Ball shadow
+        ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
         ctx.beginPath();
-        ctx.arc(ballX - gameRef.current.ballVX * i * 0.5, 
-                ballY - gameRef.current.ballVY * i * 0.5, 
-                size, 0, Math.PI * 2);
+        ctx.arc(ballX + 2, ballY + 2, BALL_SIZE / 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Ball glow
+        ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+        ctx.beginPath();
+        ctx.arc(ballX, ballY, BALL_SIZE, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Ball
+        ctx.fillStyle = '#0f0';
+        ctx.beginPath();
+        ctx.arc(ballX, ballY, BALL_SIZE / 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Ball trail
+        const trailLength = 5;
+        for (let i = 1; i <= trailLength; i++) {
+          const alpha = 0.3 - (i * 0.05);
+          const size = (BALL_SIZE / 2) - (i * 0.5);
+          ctx.fillStyle = `rgba(0, 255, 0, ${alpha})`;
+          ctx.beginPath();
+          ctx.arc(ballX - gameRef.current.ballVX * i * 0.5, 
+                  ballY - gameRef.current.ballVY * i * 0.5, 
+                  size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else {
+        // Draw stationary ball in center
+        const ballX = WIDTH / 2 - BALL_SIZE / 2;
+        const ballY = HEIGHT / 2 - BALL_SIZE / 2;
+        ctx.fillStyle = '#0f0';
+        ctx.beginPath();
+        ctx.arc(ballX + BALL_SIZE / 2, ballY + BALL_SIZE / 2, BALL_SIZE / 2, 0, Math.PI * 2);
         ctx.fill();
       }
       
@@ -207,9 +259,27 @@ function Pong() {
       ctx.fillStyle = '#0f0';
       ctx.fillText(gameRef.current.leftScore, WIDTH / 4, 40);
       ctx.fillText(gameRef.current.rightScore, WIDTH * 3 / 4, 40);
+
+      // Draw countdown
+      if (countdown > 0) {
+        ctx.font = '48px monospace';
+        ctx.fillStyle = '#0f0';
+        ctx.textAlign = 'center';
+        ctx.fillText(countdown.toString(), WIDTH / 2, HEIGHT / 2);
+      }
+
+      // Draw start/reset message
+      if (!running && !countdown) {
+        ctx.font = '24px monospace';
+        ctx.fillStyle = '#0f0';
+        ctx.textAlign = 'center';
+        ctx.fillText('Click Start to Play', WIDTH / 2, HEIGHT / 2 + 40);
+      }
     }
     
     function update() {
+      if (!running) return;
+
       // Update particles
       gameRef.current.particles = gameRef.current.particles.filter(particle => {
         particle.x += particle.vx;
@@ -321,16 +391,6 @@ function Pong() {
       }
     }
     
-    function resetBall(dir) {
-      gameRef.current.ballX = WIDTH / 2 - BALL_SIZE / 2;
-      gameRef.current.ballY = HEIGHT / 2 - BALL_SIZE / 2;
-      gameRef.current.ballVX = gameRef.current.ballSpeed * dir;
-      gameRef.current.ballVY = gameRef.current.ballSpeed * (Math.random() > 0.5 ? 1 : -1);
-      gameRef.current.hitCount = 0;
-      gameRef.current.ballSpeed = BALL_SPEED;
-      setBallSpeed(BALL_SPEED);
-    }
-    
     function loop() {
       update();
       draw();
@@ -344,7 +404,7 @@ function Pong() {
         cancelAnimationFrame(animationId);
       }
     };
-  }, [mode, modeName]);
+  }, [mode, modeName, running, countdown]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -381,7 +441,20 @@ function Pong() {
           }}
         />
       </div>
-      <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>
+      <div style={{ 
+        position: 'fixed', 
+        top: 20, 
+        left: '50%', 
+        transform: 'translateX(-50%)', 
+        zIndex: 1000,
+        color: '#0f0', 
+        fontFamily: 'monospace', 
+        background: 'rgba(0, 0, 0, 0.8)',
+        padding: '8px 16px',
+        borderRadius: 8,
+        border: '2px solid #0f0',
+        fontSize: '0.9rem'
+      }}>
         Controls: {isMobile ? 'Touch D-pad below' : 'W/S (Left Paddle), I/K or Up/Down (Right Paddle)'}
       </div>
       <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>
@@ -410,6 +483,36 @@ function Pong() {
           </button>
         ))}
       </div>
+
+      {/* Start/Reset Button */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        {showStartButton && (
+          <button onClick={handleStart} style={{ 
+            fontFamily: 'monospace', 
+            fontSize: '1.2rem', 
+            background: '#222', 
+            color: '#0f0', 
+            border: '2px solid #0f0', 
+            padding: '8px 16px', 
+            cursor: 'pointer' 
+          }}>
+            Start Game
+          </button>
+        )}
+        {running && (
+          <button onClick={handleReset} style={{ 
+            fontFamily: 'monospace', 
+            fontSize: '1.2rem', 
+            background: '#222', 
+            color: '#0f0', 
+            border: '2px solid #0f0', 
+            padding: '8px 16px', 
+            cursor: 'pointer' 
+          }}>
+            Reset Game
+          </button>
+        )}
+      </div>
       
       {/* Fullscreen Button */}
       <button
@@ -437,8 +540,20 @@ function Pong() {
       </button>
       
       {/* Touch Controls for Mobile */}
-      {isMobile && mode !== 2 && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: 600, margin: '0 auto', marginTop: 20, gap: 30 }}>
+      {isMobile && mode !== 2 && running && (
+        <div style={{ 
+          position: 'fixed', 
+          bottom: 20, 
+          left: '50%', 
+          transform: 'translateX(-50%)', 
+          zIndex: 1000,
+          background: 'rgba(0, 0, 0, 0.8)',
+          padding: 16,
+          borderRadius: 12,
+          border: '2px solid #0f0',
+          display: 'flex',
+          gap: 30
+        }}>
           <MobileControls
             onUp={() => handleTouchStart('left', 'up')}
             onDown={() => handleTouchStart('left', 'down')}

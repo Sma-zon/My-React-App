@@ -191,7 +191,7 @@ function Game2048() {
         handleGameOver(currentScoreRef.current);
       }
     }
-  }, [board, handleGameOver, score]);
+  }, [board, handleGameOver]);
 
 
 

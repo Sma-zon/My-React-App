@@ -556,7 +556,7 @@ function Frogger() {
           padding: '12px 24px',
           cursor: 'pointer',
           marginTop: 8,
-          marginBottom: 8,
+          marginBottom: 16,
           touchAction: 'manipulation',
           boxShadow: '0 0 10px #0f0',
           borderRadius: '8px',

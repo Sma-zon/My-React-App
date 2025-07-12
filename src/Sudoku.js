@@ -224,7 +224,7 @@ function Sudoku() {
   // Initialize on first load
   useEffect(() => {
     initializeGame();
-  }, [initializeGame]);
+  }, []);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

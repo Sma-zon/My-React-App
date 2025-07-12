@@ -352,7 +352,7 @@ function Tetris() {
         boxShadow: '0 0 8px #0f0'
       }}>Back to Main Menu</Link>
       
-      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', justifyContent: 'center' }}>
         {/* Main Game Canvas */}
         <div style={{ width: '100%', maxWidth: 320, aspectRatio: '0.5', margin: '0 auto', marginBottom: 16 }}>
           <canvas
@@ -373,21 +373,22 @@ function Tetris() {
         
         {/* Next Piece Preview */}
         <div style={{ 
-          width: 120, 
-          height: 120, 
+          width: 100, 
+          height: 100, 
           border: '3px solid #0f0', 
           background: '#111',
-          padding: 8,
+          padding: 4,
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center'
+          alignItems: 'center',
+          marginTop: 8
         }}>
-          <div style={{ color: '#0f0', fontFamily: 'monospace', fontSize: '0.8rem', marginBottom: 8 }}>
+          <div style={{ color: '#0f0', fontFamily: 'monospace', fontSize: '0.7rem', marginBottom: 4 }}>
             Next:
           </div>
           <canvas
-            width={96}
-            height={96}
+            width={80}
+            height={80}
             style={{
               width: '100%',
               height: 'auto',
@@ -400,7 +401,7 @@ function Tetris() {
                 if (ctx) {
                   // Clear canvas
                   ctx.fillStyle = '#111';
-                  ctx.fillRect(0, 0, 96, 96);
+                  ctx.fillRect(0, 0, 80, 80);
                   
                   // Draw next piece
                   drawNextPiece(ctx);

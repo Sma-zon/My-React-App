@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import soundManager from './sounds';
 import useScoreboard from './useScoreboard';
 
-// Card symbols for the memory game
-const CARD_SYMBOLS = ['🎮', '🎲', '🎯', '🎪', '🎨', '🎭', '🎪', '🎯', '🎲', '🎮', '🎨', '🎭'];
+// Card symbols for the memory game - 12 unique symbols
+const CARD_SYMBOLS = ['🎮', '🎲', '🎯', '🎪', '🎨', '🎭', '🎵', '🎸', '🎹', '🎺', '🎻', '🥁'];
 
 function MemoryMatch() {
   const [cards, setCards] = useState([]);
@@ -120,7 +120,7 @@ function MemoryMatch() {
         setMoves(prev => prev + 1);
         
         // Check if game is won
-        if (matchedPairs.length + 2 === cards.length) {
+        if (matchedPairs.length + 2 === CARD_SYMBOLS.length * 2) {
           setTimeout(() => {
             setGameWon(true);
             setIsRunning(false);
@@ -223,25 +223,25 @@ function MemoryMatch() {
             <button
               key={idx}
               onClick={() => handleCardClick(idx)}
-              disabled={card.matched || card.flipped || disabled}
+              disabled={card.isMatched || card.isFlipped || disabled}
               style={{
                 width: '100%',
                 aspectRatio: '1',
                 fontSize: isMobile ? '2.2rem' : '1.5rem',
-                background: card.flipped || card.matched ? '#0f0' : '#222',
-                color: card.flipped || card.matched ? '#111' : '#0f0',
+                background: card.isFlipped || card.isMatched ? '#0f0' : '#222',
+                color: card.isFlipped || card.isMatched ? '#111' : '#0f0',
                 border: '3px solid #0f0',
                 borderRadius: 12,
-                cursor: card.matched ? 'default' : 'pointer',
+                cursor: card.isMatched ? 'default' : 'pointer',
                 fontFamily: 'monospace',
                 touchAction: 'manipulation',
-                boxShadow: card.flipped ? '0 0 8px #0f0' : undefined,
+                boxShadow: card.isFlipped ? '0 0 8px #0f0' : undefined,
                 userSelect: 'none',
                 outline: 'none',
                 transition: 'background 0.2s, color 0.2s',
               }}
             >
-              {card.flipped || card.matched ? card.value : '?'}
+              {card.isFlipped || card.isMatched ? card.symbol : '?'}
             </button>
           ))}
         </div>

@@ -83,6 +83,7 @@ function SimonSays() {
       soundManager.simonGameOver();
       setMessage('Wrong! Game Over.');
       setIsUserTurn(false);
+      setActiveIdx(null);
     }
   }, [isUserTurn, sequence, userStep]);
 
