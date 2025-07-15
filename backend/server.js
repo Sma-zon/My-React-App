@@ -55,6 +55,19 @@ app.post('/api/leaderboard/:game', (req, res) => {
   res.json({ success: true });
 });
 
+// GET all games with their top scores
+app.get('/api/leaderboard', (req, res) => {
+  const scores = readScores();
+  // Convert to array of { game, scores: [...] }
+  const gamesWithScores = Object.entries(scores)
+    .filter(([game, arr]) => Array.isArray(arr) && arr.length > 0)
+    .map(([game, arr]) => ({
+      game,
+      scores: arr
+    }));
+  res.json(gamesWithScores);
+});
+
 app.listen(PORT, () => {
   console.log(`Leaderboard backend running on port ${PORT}`);
 }); 
