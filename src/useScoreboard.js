@@ -10,38 +10,34 @@ const useScoreboard = (gameName) => {
 
   // Load leaderboard data
   useEffect(() => {
-    const data = scoreboardService.getLeaderboard(gameName);
-    setLeaderboard(data);
+    (async () => {
+      const data = await scoreboardService.getLeaderboard(gameName);
+      setLeaderboard(data);
+    })();
   }, [gameName]);
 
   // Check if current score is a high score
-  const checkHighScore = (score) => {
-    return scoreboardService.isHighScore(gameName, score);
+  const checkHighScore = async (score) => {
+    return await scoreboardService.isHighScore(gameName, score);
   };
 
   // Handle game over with score
-  const handleGameOver = (score) => {
+  const handleGameOver = async (score) => {
     setCurrentScore(score);
-    
-    const isHigh = checkHighScore(score);
-    
+    const isHigh = await checkHighScore(score);
     if (isHigh) {
       soundManager.sweep(400, 800, 0.3); // Victory sound
       setShowScoreEntry(true);
     } else {
-      // Still show leaderboard even if not a high score
       setShowLeaderboard(true);
     }
   };
 
   // Handle score submission
-  const handleScoreSubmit = (username) => {
-    scoreboardService.addScore(gameName, username, currentScore);
-    
-    // Update local leaderboard
-    const updatedLeaderboard = scoreboardService.getLeaderboard(gameName);
+  const handleScoreSubmit = async (username) => {
+    await scoreboardService.addScore(gameName, username, currentScore);
+    const updatedLeaderboard = await scoreboardService.getLeaderboard(gameName);
     setLeaderboard(updatedLeaderboard);
-    
     setShowScoreEntry(false);
     setShowLeaderboard(true);
   };
@@ -58,14 +54,16 @@ const useScoreboard = (gameName) => {
   };
 
   // Show leaderboard manually
-  const showLeaderboardManually = () => {
+  const showLeaderboardManually = async () => {
     soundManager.buttonClick();
+    const updatedLeaderboard = await scoreboardService.getLeaderboard(gameName);
+    setLeaderboard(updatedLeaderboard);
     setShowLeaderboard(true);
   };
 
   // Get player's best score
-  const getPlayerBestScore = (username) => {
-    return scoreboardService.getPlayerBestScore(gameName, username);
+  const getPlayerBestScore = async (username) => {
+    return await scoreboardService.getPlayerBestScore(gameName, username);
   };
 
   // Get top score

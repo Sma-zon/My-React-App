@@ -1,77 +1,68 @@
-// Scoreboard service for managing game scores and leaderboards
+// Scoreboard service for managing game scores and leaderboards via backend API
 class ScoreboardService {
   constructor() {
-    this.storageKey = 'retroGamesLeaderboards';
-    this.leaderboards = this.loadLeaderboards();
+    this.apiBase = 'http://localhost:4000/api/leaderboard';
+    this.leaderboards = {};
   }
 
-  // Load leaderboards from localStorage
-  loadLeaderboards() {
+  // Get leaderboard for a specific game (fetch from backend)
+  async getLeaderboard(gameName) {
     try {
-      const stored = localStorage.getItem(this.storageKey);
-      return stored ? JSON.parse(stored) : {};
+      const res = await fetch(`${this.apiBase}/${encodeURIComponent(gameName)}`);
+      if (!res.ok) throw new Error('Failed to fetch leaderboard');
+      const data = await res.json();
+      this.leaderboards[gameName] = data;
+      return data;
     } catch (error) {
-      console.error('Error loading leaderboards:', error);
-      return {};
+      console.error('Error fetching leaderboard:', error);
+      return this.leaderboards[gameName] || [];
     }
   }
 
-  // Save leaderboards to localStorage
-  saveLeaderboards() {
+  // Add a new score to a game's leaderboard (POST to backend)
+  async addScore(gameName, username, score, date = new Date().toISOString()) {
     try {
-      localStorage.setItem(this.storageKey, JSON.stringify(this.leaderboards));
+      const res = await fetch(`${this.apiBase}/${encodeURIComponent(gameName)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, score, date })
+      });
+      if (!res.ok) throw new Error('Failed to submit score');
+      // Refetch leaderboard after adding
+      return await this.getLeaderboard(gameName);
     } catch (error) {
-      console.error('Error saving leaderboards:', error);
+      console.error('Error submitting score:', error);
+      return null;
     }
   }
 
-  // Get leaderboard for a specific game
-  getLeaderboard(gameName) {
-    return this.leaderboards[gameName] || [];
-  }
-
-  // Add a new score to a game's leaderboard
-  addScore(gameName, username, score, date = new Date().toISOString()) {
-    if (!this.leaderboards[gameName]) {
-      this.leaderboards[gameName] = [];
+  // Check if a score qualifies for the leaderboard (client-side, after fetch)
+  async isHighScore(gameName, score) {
+    const leaderboard = await this.getLeaderboard(gameName);
+    if (gameName === 'MemoryMatch') {
+      // Lower time is better
+      if (leaderboard.length === 0) return score > 0;
+      if (leaderboard.length < 10) return true;
+      const worst = leaderboard[leaderboard.length - 1].score;
+      return score < worst;
+    } else {
+      // Higher score is better
+      if (leaderboard.length === 0) return score > 0;
+      if (leaderboard.length < 10) return true;
+      const lowestScore = leaderboard[leaderboard.length - 1].score;
+      return score > lowestScore;
     }
-
-    const newScore = {
-      username,
-      score,
-      date,
-      id: Date.now() + Math.random() // Unique ID for each score
-    };
-
-    this.leaderboards[gameName].push(newScore);
-    
-    // Sort by score (highest first) and keep only top 10
-    this.leaderboards[gameName].sort((a, b) => b.score - a.score);
-    this.leaderboards[gameName] = this.leaderboards[gameName].slice(0, 10);
-    
-    this.saveLeaderboards();
-    return newScore;
-  }
-
-  // Check if a score qualifies for the leaderboard
-  isHighScore(gameName, score) {
-    const leaderboard = this.getLeaderboard(gameName);
-    
-    if (leaderboard.length === 0) {
-      return score > 0; // Any score > 0 is a high score for empty leaderboard
-    }
-    if (leaderboard.length < 10) {
-      return true; // Always true if less than 10 entries
-    }
-    const lowestScore = leaderboard[leaderboard.length - 1].score;
-    return score > lowestScore; // Only true if score is higher than lowest
   }
 
   // Get player's best score for a game
-  getPlayerBestScore(gameName, username) {
-    const leaderboard = this.getLeaderboard(gameName);
+  async getPlayerBestScore(gameName, username) {
+    const leaderboard = await this.getLeaderboard(gameName);
     const playerScores = leaderboard.filter(entry => entry.username === username);
-    return playerScores.length > 0 ? Math.max(...playerScores.map(s => s.score)) : 0;
+    if (gameName === 'MemoryMatch') {
+      return playerScores.length > 0 ? Math.min(...playerScores.map(s => s.score)) : 0;
+    } else {
+      return playerScores.length > 0 ? Math.max(...playerScores.map(s => s.score)) : 0;
+    }
   }
 
   // Format date for display
@@ -80,15 +71,10 @@ class ScoreboardService {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
-  // Clear all leaderboards (for testing/reset)
-  clearAllLeaderboards() {
-    this.leaderboards = {};
-    this.saveLeaderboards();
-  }
-
-  // Get all games that have leaderboards
-  getGamesWithLeaderboards() {
-    return Object.keys(this.leaderboards).filter(game => this.leaderboards[game].length > 0);
+  // Get all games that have leaderboards (not used, but could be implemented)
+  async getGamesWithLeaderboards() {
+    // Not implemented in backend, so just return keys with non-empty arrays
+    return Object.keys(this.leaderboards).filter(game => (this.leaderboards[game] || []).length > 0);
   }
 }
 
