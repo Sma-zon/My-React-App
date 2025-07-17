@@ -22,17 +22,25 @@ class ScoreboardService {
   // Add a new score to a game's leaderboard (POST to backend)
   async addScore(gameName, username, score, date = new Date().toISOString()) {
     try {
+      console.log(`Attempting to submit score: ${score} for ${gameName} by ${username}`);
       const res = await fetch(`${this.apiBase}/${encodeURIComponent(gameName)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, score, date })
       });
-      if (!res.ok) throw new Error('Failed to submit score');
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error(`Backend error: ${res.status} - ${errorText}`);
+        throw new Error(`Failed to submit score: ${res.status} - ${errorText}`);
+      }
+      
+      console.log('Score submitted successfully');
       // Refetch leaderboard after adding
       return await this.getLeaderboard(gameName);
     } catch (error) {
       console.error('Error submitting score:', error);
-      return null;
+      throw error; // Re-throw so the UI can handle it
     }
   }
 

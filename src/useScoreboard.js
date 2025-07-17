@@ -43,11 +43,20 @@ const useScoreboard = (gameName) => {
 
   // Handle score submission
   const handleScoreSubmit = async (username) => {
-    await scoreboardService.addScore(gameName, username, currentScore);
-    const updatedLeaderboard = await scoreboardService.getLeaderboard(gameName);
-    setLeaderboard(updatedLeaderboard);
-    setShowScoreEntry(false);
-    setShowLeaderboard(true);
+    try {
+      console.log(`Submitting score for ${gameName}: ${currentScore} by ${username}`);
+      await scoreboardService.addScore(gameName, username, currentScore);
+      const updatedLeaderboard = await scoreboardService.getLeaderboard(gameName);
+      setLeaderboard(updatedLeaderboard);
+      setShowScoreEntry(false);
+      setShowLeaderboard(true);
+      console.log('Score submitted and leaderboard updated successfully');
+    } catch (error) {
+      console.error('Failed to submit score:', error);
+      // Dont close the score entry form if there's an error
+      // You could show an error message to the user here
+      alert(`Failed to submit score: ${error.message}`);
+    }
   };
 
   // Handle score entry cancellation
