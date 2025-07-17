@@ -19,6 +19,7 @@ function MemoryMatch() {
   const {
     showScoreEntry,
     showLeaderboard,
+    currentScore,
     handleGameOver,
     handleScoreSubmit,
     handleScoreCancel,

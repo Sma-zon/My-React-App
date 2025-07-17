@@ -32,6 +32,7 @@ function FlappyBird() {
   const {
     showScoreEntry,
     showLeaderboard,
+    currentScore,
     handleGameOver,
     handleScoreSubmit,
     handleScoreCancel,
@@ -385,7 +386,7 @@ function FlappyBird() {
       {/* Score Entry Modal */}
       {showScoreEntry && (
         <ScoreEntry
-          score={score}
+          score={currentScore}
           gameName="Flappy Bird"
           onSubmit={handleScoreSubmit}
           onCancel={handleScoreCancel}

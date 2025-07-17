@@ -127,6 +127,7 @@ function Game2048() {
   const {
     showScoreEntry,
     showLeaderboard,
+    currentScore,
     handleGameOver,
     handleScoreSubmit,
     handleScoreCancel,
@@ -330,7 +331,7 @@ function Game2048() {
       {/* Score Entry Modal */}
       {showScoreEntry && (
         <ScoreEntry
-          score={score}
+          score={currentScore}
           gameName="2048"
           onSubmit={handleScoreSubmit}
           onCancel={handleScoreCancel}

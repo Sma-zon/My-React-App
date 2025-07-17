@@ -28,6 +28,7 @@ function Breakout() {
   const {
     showScoreEntry,
     showLeaderboard,
+    currentScore,
     handleGameOver,
     handleScoreSubmit,
     handleScoreCancel,

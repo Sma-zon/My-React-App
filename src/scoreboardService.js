@@ -48,7 +48,7 @@ class ScoreboardService {
     } else {
       // Higher score is better
       if (leaderboard.length === 0) return score > 0;
-      if (leaderboard.length < 10) return true;
+      if (leaderboard.length < 10) return score > 0; // Only consider scores > 0 for empty leaderboards
       const lowestScore = leaderboard[leaderboard.length - 1].score;
       return score > lowestScore;
     }

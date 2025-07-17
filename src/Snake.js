@@ -39,6 +39,7 @@ function Snake() {
   const {
     showScoreEntry,
     showLeaderboard,
+    currentScore,
     handleGameOver,
     handleScoreSubmit,
     handleScoreCancel,
@@ -444,7 +445,7 @@ function Snake() {
       {/* Score Entry Modal */}
       {showScoreEntry && (
         <ScoreEntry
-          score={score}
+          score={currentScore}
           gameName="Snake"
           onSubmit={handleScoreSubmit}
           onCancel={handleScoreCancel}

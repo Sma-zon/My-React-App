@@ -107,6 +107,7 @@ function Tetris() {
   const {
     showScoreEntry,
     showLeaderboard,
+    currentScore,
     handleGameOver,
     handleScoreSubmit,
     handleScoreCancel,
@@ -506,7 +507,7 @@ function Tetris() {
       {/* Score Entry Modal */}
       {showScoreEntry && (
         <ScoreEntry
-          score={score}
+          score={currentScore}
           gameName="Tetris"
           onSubmit={handleScoreSubmit}
           onCancel={handleScoreCancel}

@@ -24,12 +24,20 @@ const useScoreboard = (gameName) => {
   // Handle game over with score
   const handleGameOver = async (score) => {
     setCurrentScore(score);
-    const isHigh = await checkHighScore(score);
-    if (isHigh) {
-      soundManager.sweep(400, 800, 0.3); // Victory sound
-      setShowScoreEntry(true);
-    } else {
-      setShowLeaderboard(true);
+    try {
+      const isHigh = await checkHighScore(score);
+      if (isHigh) {
+        soundManager.sweep(400, 0.3); // Victory sound
+        setShowScoreEntry(true);
+      } else {
+        // Only show leaderboard if there's data or if score > 0
+        if (score > 0 || leaderboard.length > 0) {
+          setShowLeaderboard(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking high score:', error);
+      // If theres an error, don't show any modal to prevent blank page
     }
   };
 
