@@ -136,6 +136,32 @@ function Game2048() {
     getTopScore
   } = useScoreboard('2048');
 
+  // Handle move logic
+  const handleMove = useCallback((dir) => {
+    const { board: newBoard, moved, score: addScore } = move(board, dir);
+    
+    if (moved) {
+      soundManager.game2048Move();
+      if (addScore > 0) {
+        soundManager.game2048Merge();
+      }
+      
+      addRandom(newBoard);
+      setBoard(newBoard);
+      setScore(s => {
+        const newScore = s + addScore;
+        currentScoreRef.current = newScore;
+        return newScore;
+      });
+      
+      if (isGameOver(newBoard)) {
+        soundManager.game2048GameOver();
+        setGameOver(true);
+        handleGameOver(currentScoreRef.current);
+      }
+    }
+  }, [board, handleGameOver]);
+
   // Check if device is mobile
   useEffect(() => {
     const checkMobile = () => {
@@ -167,34 +193,6 @@ function Game2048() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [board, gameOver, running, handleMove]);
-
-  // Handle move logic
-  const handleMove = useCallback((dir) => {
-    const { board: newBoard, moved, score: addScore } = move(board, dir);
-    
-    if (moved) {
-      soundManager.game2048Move();
-      if (addScore > 0) {
-        soundManager.game2048Merge();
-      }
-      
-      addRandom(newBoard);
-      setBoard(newBoard);
-      setScore(s => {
-        const newScore = s + addScore;
-        currentScoreRef.current = newScore;
-        return newScore;
-      });
-      
-      if (isGameOver(newBoard)) {
-        soundManager.game2048GameOver();
-        setGameOver(true);
-        handleGameOver(currentScoreRef.current);
-      }
-    }
-  }, [board, handleGameOver]);
-
-
 
   // Fullscreen functionality
   const handleFullscreen = () => {
