@@ -71,10 +71,18 @@ class ScoreboardService {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
-  // Get all games that have leaderboards (not used, but could be implemented)
+  // Get all games that have leaderboards (fetch from backend)
   async getGamesWithLeaderboards() {
-    // Not implemented in backend, so just return keys with non-empty arrays
-    return Object.keys(this.leaderboards).filter(game => (this.leaderboards[game] || []).length > 0);
+    try {
+      const res = await fetch(this.apiBase);
+      if (!res.ok) throw new Error('Failed to fetch games with leaderboards');
+      const data = await res.json();
+      // Return an array of game names
+      return data.map(entry => entry.game);
+    } catch (error) {
+      console.error('Error fetching games with leaderboards:', error);
+      return [];
+    }
   }
 }
 
