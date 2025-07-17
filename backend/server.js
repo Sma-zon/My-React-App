@@ -52,7 +52,14 @@ app.post('/api/leaderboard/:game', (req, res) => {
   if (!scores[game]) scores[game] = [];
   scores[game].push({ username, score, date: new Date().toISOString() });
   writeScores(scores);
-  res.json({ success: true });
+  // Return the updated leaderboard array!
+  let sorted;
+  if (game === 'MemoryMatch') {
+    sorted = [...scores[game]].sort((a, b) => a.score - b.score);
+  } else {
+    sorted = [...scores[game]].sort((a, b) => b.score - a.score);
+  }
+  res.json(sorted.slice(0, 10));
 });
 
 // GET all games with their top scores
