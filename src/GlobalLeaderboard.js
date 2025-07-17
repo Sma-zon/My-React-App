@@ -5,7 +5,14 @@ import scoreboardService from './scoreboardService';
 const GlobalLeaderboard = ({ onClose }) => {
   const [gamesWithScores, setGamesWithScores] = useState([]);
   const [selectedGame, setSelectedGame] = useState(null);
+  const [selectedGameLeaderboard, setSelectedGameLeaderboard] = useState([]);
   const [isVisible, setIsVisible] = useState(false);
+  const [adminCode, setAdminCode] = useState('');
+  const [adminUnlocked, setAdminUnlocked] = useState(false);
+  const [editIndex, setEditIndex] = useState(null);
+  const [editUsername, setEditUsername] = useState('');
+  const [editScore, setEditScore] = useState('');
+  const [adminError, setAdminError] = useState('');
 
   useEffect(() => {
     // Load all games with leaderboards
@@ -39,9 +46,17 @@ const GlobalLeaderboard = ({ onClose }) => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  const selectGame = (gameName) => {
+  const selectGame = async (gameName) => {
     soundManager.buttonClick();
     setSelectedGame(gameName);
+    
+    try {
+      const leaderboard = await scoreboardService.getLeaderboard(gameName);
+      setSelectedGameLeaderboard(leaderboard || []);
+    } catch (error) {
+      console.error('Error loading game leaderboard:', error);
+      setSelectedGameLeaderboard([]);
+    }
   };
 
   const goBack = () => {
@@ -49,8 +64,50 @@ const GlobalLeaderboard = ({ onClose }) => {
     setSelectedGame(null);
   };
 
+  const handleAdminCodeSubmit = (e) => {
+    e.preventDefault();
+    if (scoreboardService.validateAdminCode(adminCode)) {
+      setAdminUnlocked(true);
+      setAdminError('');
+    } else {
+      setAdminUnlocked(false);
+      setAdminError('Incorrect code.');
+    }
+  };
+
+  const startEdit = (index, entry) => {
+    setEditIndex(index);
+    setEditUsername(entry.username);
+    setEditScore(entry.score);
+  };
+
+  const cancelEdit = () => {
+    setEditIndex(null);
+    setEditUsername('');
+    setEditScore('');
+  };
+
+  const saveEdit = async (index, entry) => {
+    try {
+      const updated = await scoreboardService.updateScore(selectedGame, entry.id, editUsername, Number(editScore));
+      setSelectedGameLeaderboard(updated);
+      cancelEdit();
+    } catch (err) {
+      setAdminError('Failed to update score.');
+    }
+  };
+
+  const deleteEntry = async (index, entry) => {
+    if (!window.confirm('Are you sure you want to delete this score?')) return;
+    try {
+      const updated = await scoreboardService.deleteScore(selectedGame, entry.id);
+      setSelectedGameLeaderboard(updated);
+    } catch (err) {
+      setAdminError('Failed to delete score.');
+    }
+  };
+
   if (selectedGame) {
-    const leaderboard = scoreboardService.getLeaderboard(selectedGame);
     return (
       <div style={{
         position: 'fixed',
@@ -75,7 +132,8 @@ const GlobalLeaderboard = ({ onClose }) => {
           width: '90%',
           maxHeight: '80vh',
           overflow: 'auto',
-          boxShadow: '0 0 20px #0f0'
+          boxShadow: '0 0 20px #0f0',
+          position: 'relative'
         }}>
           <div style={{
             display: 'flex',
@@ -107,7 +165,7 @@ const GlobalLeaderboard = ({ onClose }) => {
             </button>
           </div>
 
-          {leaderboard.length === 0 ? (
+          {selectedGameLeaderboard.length === 0 ? (
             <div style={{
               color: '#888',
               fontFamily: 'monospace',
@@ -122,7 +180,7 @@ const GlobalLeaderboard = ({ onClose }) => {
               {/* Header */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: '60px 1fr 120px 150px',
+                gridTemplateColumns: adminUnlocked ? '60px 1fr 120px 150px 120px' : '60px 1fr 120px 150px',
                 gap: '12px',
                 padding: '12px',
                 borderBottom: '2px solid #0f0',
@@ -135,15 +193,16 @@ const GlobalLeaderboard = ({ onClose }) => {
                 <div>Player</div>
                 <div>Score</div>
                 <div>Date</div>
+                {adminUnlocked && <div>Admin</div>}
               </div>
 
               {/* Scores */}
-              {leaderboard.map((entry, index) => (
+              {selectedGameLeaderboard.map((entry, index) => (
                 <div
-                  key={entry.id}
+                  key={entry.id || index}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '60px 1fr 120px 150px',
+                    gridTemplateColumns: adminUnlocked ? '60px 1fr 120px 150px 120px' : '60px 1fr 120px 150px',
                     gap: '12px',
                     padding: '12px',
                     borderBottom: '1px solid #333',
@@ -161,20 +220,54 @@ const GlobalLeaderboard = ({ onClose }) => {
                   }}>
                     #{index + 1}
                   </div>
-                  <div style={{
-                    fontWeight: 'bold',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {entry.username}
-                  </div>
-                  <div style={{ fontWeight: 'bold' }}>
-                    {entry.score.toLocaleString()}
-                  </div>
+                  {editIndex === index ? (
+                    <>
+                      <input
+                        value={editUsername}
+                        onChange={e => setEditUsername(e.target.value)}
+                        style={{ fontFamily: 'monospace', width: '90%' }}
+                      />
+                    </>
+                  ) : (
+                    <div style={{
+                      fontWeight: 'bold',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {entry.username}
+                    </div>
+                  )}
+                  {editIndex === index ? (
+                    <input
+                      type="number"
+                      value={editScore}
+                      onChange={e => setEditScore(e.target.value)}
+                      style={{ fontFamily: 'monospace', width: '90%' }}
+                    />
+                  ) : (
+                    <div style={{ fontWeight: 'bold' }}>
+                      {entry.score.toLocaleString()}
+                    </div>
+                  )}
                   <div style={{ fontSize: '0.8rem', color: '#888' }}>
                     {scoreboardService.formatDate(entry.date)}
                   </div>
+                  {adminUnlocked && (
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      {editIndex === index ? (
+                        <>
+                          <button onClick={() => saveEdit(index, entry)} style={{ fontFamily: 'monospace', color: '#0f0', background: '#222', border: '1px solid #0f0', borderRadius: 3, marginRight: 4 }}>Save</button>
+                          <button onClick={cancelEdit} style={{ fontFamily: 'monospace', color: '#f00', background: '#222', border: '1px solid #f00', borderRadius: 3 }}>Cancel</button>
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={() => startEdit(index, entry)} style={{ fontFamily: 'monospace', color: '#0f0', background: '#222', border: '1px solid #0f0', borderRadius: 3, marginRight: 4 }}>Edit</button>
+                          <button onClick={() => deleteEntry(index, entry)} style={{ fontFamily: 'monospace', color: '#f00', background: '#222', border: '1px solid #f00', borderRadius: 3 }}>Delete</button>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -215,6 +308,36 @@ const GlobalLeaderboard = ({ onClose }) => {
             >
               Close
             </button>
+          </div>
+
+          {/* Admin section */}
+          <div style={{
+            position: 'absolute',
+            left: 0,
+            bottom: 0,
+            padding: '12px',
+            background: 'rgba(0,0,0,0.7)',
+            borderTopRightRadius: 8,
+            border: '1px solid #0f0',
+            minWidth: 180
+          }}>
+            {adminUnlocked ? (
+              <div style={{ color: '#0f0', fontFamily: 'monospace', fontSize: '0.95rem' }}>
+                Admin mode enabled
+              </div>
+            ) : (
+              <form onSubmit={handleAdminCodeSubmit}>
+                <input
+                  type="password"
+                  value={adminCode}
+                  onChange={e => setAdminCode(e.target.value)}
+                  placeholder="Enter admin code"
+                  style={{ fontFamily: 'monospace', width: '100%', marginBottom: 4 }}
+                />
+                <button type="submit" style={{ fontFamily: 'monospace', width: '100%', background: '#222', color: '#0f0', border: '1px solid #0f0', borderRadius: 3 }}>Unlock</button>
+                {adminError && <div style={{ color: '#f00', fontSize: '0.85rem', marginTop: 2 }}>{adminError}</div>}
+              </form>
+            )}
           </div>
         </div>
       </div>
@@ -303,14 +426,13 @@ const GlobalLeaderboard = ({ onClose }) => {
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
               gap: '12px'
             }}>
-              {gamesWithScores.map((gameName) => {
-                const leaderboard = scoreboardService.getLeaderboard(gameName);
-                const topScore = leaderboard.length > 0 ? leaderboard[0].score : 0;
+              {gamesWithScores.map(({ game, scores }) => {
+                const topScore = scores.length > 0 ? scores[0].score : 0;
                 
                 return (
                   <button
-                    key={gameName}
-                    onClick={() => selectGame(gameName)}
+                    key={game}
+                    onClick={() => selectGame(game)}
                     style={{
                       fontFamily: 'monospace',
                       fontSize: '1rem',
@@ -333,13 +455,13 @@ const GlobalLeaderboard = ({ onClose }) => {
                     }}
                   >
                     <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
-                      {gameName}
+                      {game}
                     </div>
                     <div style={{ fontSize: '0.9rem', color: '#888' }}>
                       Top Score: {topScore.toLocaleString()}
                     </div>
                     <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                      {leaderboard.length} entries
+                      {scores.length} entries
                     </div>
                   </button>
                 );

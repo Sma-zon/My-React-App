@@ -2,10 +2,12 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
+const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 const SCORES_FILE = path.join(__dirname, 'scores.json');
+const ADMIN_CODE = 'TomTheCoder';
 
 app.use(cors());
 app.use(express.json());
@@ -26,11 +28,22 @@ function writeScores(scores) {
   fs.writeFileSync(SCORES_FILE, JSON.stringify(scores, null, 2));
 }
 
+// Helper: Validate admin code
+function validateAdminCode(req) {
+  const adminCode = req.headers['x-admin-code'];
+  return adminCode === ADMIN_CODE;
+}
+
 // GET leaderboard for a game
 app.get('/api/leaderboard/:game', (req, res) => {
   const { game } = req.params;
   const scores = readScores();
   const gameScores = scores[game] || [];
+  // Ensure all entries have an id
+  for (const entry of gameScores) {
+    if (!entry.id) entry.id = uuidv4();
+  }
+  writeScores(scores);
   // Sort descending by score (or ascending by time for MemoryMatch)
   let sorted;
   if (game === 'MemoryMatch') {
@@ -50,9 +63,72 @@ app.post('/api/leaderboard/:game', (req, res) => {
   }
   const scores = readScores();
   if (!scores[game]) scores[game] = [];
-  scores[game].push({ username, score, date: new Date().toISOString() });
+  const newEntry = { id: uuidv4(), username, score, date: new Date().toISOString() };
+  scores[game].push(newEntry);
   writeScores(scores);
   // Return the updated leaderboard array!
+  let sorted;
+  if (game === 'MemoryMatch') {
+    sorted = [...scores[game]].sort((a, b) => a.score - b.score);
+  } else {
+    sorted = [...scores[game]].sort((a, b) => b.score - a.score);
+  }
+  res.json(sorted.slice(0, 10));
+});
+
+// PUT update score (admin only)
+app.put('/api/leaderboard/:game/:scoreId', (req, res) => {
+  if (!validateAdminCode(req)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  const { game, scoreId } = req.params;
+  const { username, score } = req.body;
+  
+  if (!username || typeof score !== 'number') {
+    return res.status(400).json({ error: 'Invalid username or score' });
+  }
+  
+  const scores = readScores();
+  if (!scores[game]) {
+    return res.status(404).json({ error: 'Score not found' });
+  }
+  const idx = scores[game].findIndex(entry => entry.id === scoreId);
+  if (idx === -1) {
+    return res.status(404).json({ error: 'Score not found' });
+  }
+  // Update the score
+  scores[game][idx] = { ...scores[game][idx], username, score, date: new Date().toISOString() };
+  writeScores(scores);
+  // Return updated leaderboard
+  let sorted;
+  if (game === 'MemoryMatch') {
+    sorted = [...scores[game]].sort((a, b) => a.score - b.score);
+  } else {
+    sorted = [...scores[game]].sort((a, b) => b.score - a.score);
+  }
+  res.json(sorted.slice(0, 10));
+});
+
+// DELETE score (admin only)
+app.delete('/api/leaderboard/:game/:scoreId', (req, res) => {
+  if (!validateAdminCode(req)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  const { game, scoreId } = req.params;
+  const scores = readScores();
+  if (!scores[game]) {
+    return res.status(404).json({ error: 'Score not found' });
+  }
+  const idx = scores[game].findIndex(entry => entry.id === scoreId);
+  if (idx === -1) {
+    return res.status(404).json({ error: 'Score not found' });
+  }
+  // Remove the score
+  scores[game].splice(idx, 1);
+  writeScores(scores);
+  // Return updated leaderboard
   let sorted;
   if (game === 'MemoryMatch') {
     sorted = [...scores[game]].sort((a, b) => a.score - b.score);
@@ -65,6 +141,13 @@ app.post('/api/leaderboard/:game', (req, res) => {
 // GET all games with their top scores
 app.get('/api/leaderboard', (req, res) => {
   const scores = readScores();
+  // Ensure all entries have an id
+  for (const arr of Object.values(scores)) {
+    for (const entry of arr) {
+      if (!entry.id) entry.id = uuidv4();
+    }
+  }
+  writeScores(scores);
   // Convert to array of { game, scores: [...] }
   const gamesWithScores = Object.entries(scores)
     .filter(([game, arr]) => Array.isArray(arr) && arr.length > 0)

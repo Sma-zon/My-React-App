@@ -3,6 +3,60 @@ class ScoreboardService {
   constructor() {
     this.apiBase = 'http://localhost:4000/api/leaderboard';
     this.leaderboards = {};
+    this.adminCode = 'TomTheCoder';
+  }
+
+  // Validate admin code
+  validateAdminCode(code) {
+    return code === this.adminCode;
+  }
+
+  // Update a score entry (admin only)
+  async updateScore(gameName, scoreId, newUsername, newScore) {
+    try {
+      const res = await fetch(`${this.apiBase}/${encodeURIComponent(gameName)}/${scoreId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-code': this.adminCode
+        },
+        body: JSON.stringify({ username: newUsername, score: newScore })
+      });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to update score: ${res.status} - ${errorText}`);
+      }
+      
+      // Refetch leaderboard after updating
+      return await this.getLeaderboard(gameName);
+    } catch (error) {
+      console.error('Error updating score:', error);
+      throw error;
+    }
+  }
+
+  // Delete a score entry (admin only)
+  async deleteScore(gameName, scoreId) {
+    try {
+      const res = await fetch(`${this.apiBase}/${encodeURIComponent(gameName)}/${scoreId}`, {
+        method: 'DELETE',
+        headers: {
+          'x-admin-code': this.adminCode
+        }
+      });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to delete score: ${res.status} - ${errorText}`);
+      }
+      
+      // Refetch leaderboard after deleting
+      return await this.getLeaderboard(gameName);
+    } catch (error) {
+      console.error('Error deleting score:', error);
+      throw error;
+    }
   }
 
   // Get leaderboard for a specific game (fetch from backend)
