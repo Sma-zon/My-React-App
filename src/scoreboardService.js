@@ -85,8 +85,8 @@ class ScoreboardService {
       const res = await fetch(this.apiBase);
       if (!res.ok) throw new Error('Failed to fetch games with leaderboards');
       const data = await res.json();
-      // Return an array of game names
-      return data.map(entry => entry.game);
+      // Return the full array of { game, scores }
+      return data;
     } catch (error) {
       console.error('Error fetching games with leaderboards:', error);
       return [];

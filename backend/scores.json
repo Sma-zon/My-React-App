@@ -19,6 +19,18 @@
       "username": "aaa",
       "score": 2,
       "date": "2025-07-17T02:46:16.761Z"
+    },
+    {
+      "username": "IIII",
+      "score": 4,
+      "date": "2025-07-17T02:52:42.172Z"
+    }
+  ],
+  "Tetris": [
+    {
+      "username": "ssss",
+      "score": 100,
+      "date": "2025-07-17T02:55:16.064Z"
     }
   ]
 }
