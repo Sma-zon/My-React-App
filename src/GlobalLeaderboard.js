@@ -9,9 +9,17 @@ const GlobalLeaderboard = ({ onClose }) => {
 
   useEffect(() => {
     // Load all games with leaderboards
-    const games = scoreboardService.getGamesWithLeaderboards();
-    setGamesWithScores(games);
-    setIsVisible(true);
+    const loadGames = async () => {
+      try {
+        const games = await scoreboardService.getGamesWithLeaderboards();
+        setGamesWithScores(games);
+      } catch (error) {
+        console.error('Error loading games:', error);
+        setGamesWithScores([]);
+      }
+      setIsVisible(true);
+    };
+    loadGames();
   }, []);
 
   const handleClose = () => {
