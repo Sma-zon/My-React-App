@@ -6,8 +6,17 @@ import ScoreEntry from './ScoreEntry';
 import Leaderboard from './Leaderboard';
 
 const BOARD_SIZE = 4;
+const TILE_SIZE = 80; // px, for animation math
+const TILE_GAP = 8; // px
+
+// Helper to generate a unique id for each tile
+let tileUid = 1;
+function makeTileId() {
+  return tileUid++;
+}
+
 const INIT_BOARD = () => {
-  const board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(0));
+  const board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(null));
   addRandom(board);
   addRandom(board);
   return board;
@@ -22,12 +31,12 @@ function addRandom(board) {
   }
   if (empty.length) {
     const [r, c] = empty[Math.floor(Math.random() * empty.length)];
-    board[r][c] = Math.random() < 0.9 ? 2 : 4;
+    board[r][c] = { value: Math.random() < 0.9 ? 2 : 4, id: makeTileId(), justAdded: true };
   }
 }
 
 function clone(board) {
-  return board.map(row => [...row]);
+  return board.map(row => row.map(cell => cell ? { ...cell } : null));
 }
 
 function transpose(board) {
@@ -41,20 +50,21 @@ function reverse(board) {
 function moveLeft(board) {
   let moved = false;
   let score = 0;
-  const newBoard = board.map(row => {
-    let arr = row.filter(x => x);
+  let newBoard = board.map(row => row.map(cell => cell ? { ...cell, justAdded: false } : null));
+  for (let r = 0; r < BOARD_SIZE; r++) {
+    let arr = newBoard[r].filter(x => x);
     for (let i = 0; i < arr.length - 1; i++) {
-      if (arr[i] && arr[i] === arr[i + 1]) {
-        arr[i] *= 2;
-        score += arr[i];
-        arr[i + 1] = 0;
+      if (arr[i] && arr[i].value === arr[i + 1].value) {
+        arr[i] = { ...arr[i], value: arr[i].value * 2 };
+        score += arr[i].value;
+        arr[i + 1] = null;
       }
     }
     arr = arr.filter(x => x);
-    while (arr.length < BOARD_SIZE) arr.push(0);
-    if (arr.some((v, i) => v !== row[i])) moved = true;
-    return arr;
-  });
+    while (arr.length < BOARD_SIZE) arr.push(null);
+    if (arr.some((v, i) => v !== newBoard[r][i])) moved = true;
+    newBoard[r] = arr;
+  }
   return { board: newBoard, moved, score };
 }
 
@@ -116,6 +126,7 @@ function isGameOver(board) {
 
 function Game2048() {
   const [board, setBoard] = useState(INIT_BOARD());
+  const [tiles, setTiles] = useState([]); // For animation
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [running, setRunning] = useState(false);
@@ -135,6 +146,20 @@ function Game2048() {
     showLeaderboardManually,
     getTopScore
   } = useScoreboard('2048');
+
+  // Convert board to tile list for animation
+  useEffect(() => {
+    const newTiles = [];
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        const cell = board[r][c];
+        if (cell) {
+          newTiles.push({ ...cell, row: r, col: c });
+        }
+      }
+    }
+    setTiles(newTiles);
+  }, [board]);
 
   // Handle move logic
   const handleMove = useCallback((dir) => {
@@ -236,40 +261,66 @@ function Game2048() {
       <div style={{ width: '100%', maxWidth: 400, margin: '0 auto', marginBottom: 16 }}>
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)`,
-            gap: 8,
-            width: '100%',
-            aspectRatio: '1',
+            position: 'relative',
+            width: BOARD_SIZE * TILE_SIZE + (BOARD_SIZE - 1) * TILE_GAP,
+            height: BOARD_SIZE * TILE_SIZE + (BOARD_SIZE - 1) * TILE_GAP,
+            background: '#111',
+            borderRadius: 16,
+            border: '4px solid #0f0',
+            margin: '0 auto',
+            boxShadow: '0 0 16px #0f0',
+            overflow: 'hidden',
           }}
         >
-          {board.map((row, r) =>
-            row.map((cell, c) => (
-              <div
-                key={r + '-' + c}
-                style={{
-                  width: '100%',
-                  aspectRatio: '1',
-                  fontSize: isMobile ? '2.2rem' : '1.5rem',
-                  background: cell ? '#222' : '#111',
-                  color: cell ? '#0f0' : '#333',
-                  border: '3px solid #0f0',
-                  borderRadius: 12,
-                  fontFamily: 'monospace',
-                  touchAction: 'manipulation',
-                  userSelect: 'none',
-                  outline: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: cell ? '0 0 8px #0f0' : undefined,
-                  transition: 'background 0.2s, color 0.2s',
-                }}
-              >
-                {cell || ''}
-              </div>
-            ))
-          )}
+          {/* Render grid background */}
+          {[...Array(BOARD_SIZE * BOARD_SIZE)].map((_, i) => (
+            <div
+              key={'bg-' + i}
+              style={{
+                position: 'absolute',
+                width: TILE_SIZE,
+                height: TILE_SIZE,
+                left: (i % BOARD_SIZE) * (TILE_SIZE + TILE_GAP),
+                top: Math.floor(i / BOARD_SIZE) * (TILE_SIZE + TILE_GAP),
+                background: '#222',
+                borderRadius: 12,
+                border: '2px solid #0f0',
+                boxSizing: 'border-box',
+                zIndex: 0,
+              }}
+            />
+          ))}
+          {/* Render tiles */}
+          {tiles.map(tile => (
+            <div
+              key={tile.id}
+              style={{
+                position: 'absolute',
+                width: TILE_SIZE,
+                height: TILE_SIZE,
+                left: tile.col * (TILE_SIZE + TILE_GAP),
+                top: tile.row * (TILE_SIZE + TILE_GAP),
+                fontSize: isMobile ? '2.2rem' : '1.5rem',
+                background: tile.value ? '#222' : '#111',
+                color: tile.value ? '#0f0' : '#333',
+                border: '3px solid #0f0',
+                borderRadius: 12,
+                fontFamily: 'monospace',
+                touchAction: 'manipulation',
+                userSelect: 'none',
+                outline: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: tile.value ? '0 0 8px #0f0' : undefined,
+                transition: 'left 0.18s cubic-bezier(.45,1.6,.5,1), top 0.18s cubic-bezier(.45,1.6,.5,1)',
+                zIndex: 1,
+                fontWeight: 'bold',
+              }}
+            >
+              {tile.value || ''}
+            </div>
+          ))}
         </div>
       </div>
       <div style={{ color: '#0f0', fontFamily: 'monospace', marginBottom: 8 }}>Score: {score}</div>

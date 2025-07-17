@@ -1,4 +1,12 @@
 {
+  "2048": [
+    {
+      "id": "0c47b85e-8e1d-4328-b659-b08c85550a97",
+      "username": "Smazon",
+      "score": 1e+79,
+      "date": "2025-07-17T03:36:33.686Z"
+    }
+  ],
   "Snake": [
     {
       "username": "Smazon",
@@ -37,6 +45,14 @@
       "username": "Smazon",
       "score": 10000,
       "date": "2025-07-17T03:24:46.609Z"
+    }
+  ],
+  "Breakout": [
+    {
+      "id": "abd05a90-338f-4195-83f2-eaa83fd47045",
+      "username": "Smazon",
+      "score": 491,
+      "date": "2025-07-17T03:42:06.541Z"
     }
   ]
 }
