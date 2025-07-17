@@ -8,9 +8,18 @@ const Leaderboard = ({ gameName, onClose }) => {
 
   useEffect(() => {
     // Load leaderboard data
-    const data = scoreboardService.getLeaderboard(gameName);
-    setLeaderboard(data);
-    setIsVisible(true);
+    const loadLeaderboard = async () => {
+      try {
+        const data = await scoreboardService.getLeaderboard(gameName);
+        setLeaderboard(data || []);
+      } catch (error) {
+        console.error('Error loading leaderboard:', error);
+        setLeaderboard([]);
+      }
+      setIsVisible(true);
+    };
+    
+    loadLeaderboard();
   }, [gameName]);
 
   const handleClose = () => {
