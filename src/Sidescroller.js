@@ -108,7 +108,7 @@ function Sidescroller() {
         ctx.fillStyle = obs.isYellow ? '#ff0' : '#f00';
         if (obs.isYellow) {
           // Draw yellow blocks as 2x2
-          ctx.fillRect(obs.x, obs.y, OBSTACLE_WIDTH * 2, OBSTACLE_HEIGHT * 2);
+          ctx.fillRect(obs.x, obs.y, OBSTACLE_WIDTH * 2, OBSTACLE_HEIGHT);
         } else {
           // Draw red blocks as normal size
           ctx.fillRect(obs.x, obs.y, OBSTACLE_WIDTH, OBSTACLE_HEIGHT);

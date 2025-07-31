@@ -44,7 +44,7 @@ Update `src/config.js`:
 ```javascript
 const config = {
   backendUrl: process.env.NODE_ENV === 'production' 
-    ? 'https://your-leaderboard-backend.onrender.com' // Replace with your actual URL
+    ? 'https://retrowebsitebackend.onrender.com' // Replace with your actual URL
     : 'http://localhost:4000'
 };
 ```
