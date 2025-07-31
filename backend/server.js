@@ -2,7 +2,17 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
-const { v4: uuidv4 } = require('uuid');
+
+// Try to import uuid with better error handling
+let uuidv4;
+try {
+  const { v4 } = require('uuid');
+  uuidv4 = v4;
+} catch (error) {
+  console.error('Error loading uuid module:', error.message);
+  console.error('Please ensure uuid is installed: npm install uuid');
+  process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -11,6 +21,15 @@ const ADMIN_CODE = 'TomTheCoder';
 
 app.use(cors());
 app.use(express.json());
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
 
 // Helper: Read scores from file
 function readScores() {
@@ -25,7 +44,12 @@ function readScores() {
 
 // Helper: Write scores to file
 function writeScores(scores) {
-  fs.writeFileSync(SCORES_FILE, JSON.stringify(scores, null, 2));
+  try {
+    fs.writeFileSync(SCORES_FILE, JSON.stringify(scores, null, 2));
+  } catch (error) {
+    console.error('Error writing scores to file:', error);
+    throw new Error('Failed to save scores');
+  }
 }
 
 // Helper: Validate admin code
@@ -160,4 +184,6 @@ app.get('/api/leaderboard', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Leaderboard backend running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Scores file: ${SCORES_FILE}`);
 }); 

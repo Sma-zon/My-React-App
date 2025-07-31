@@ -3,10 +3,23 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "npm install",
+    "dev": "node server.js",
+    "prestart": "node -e \"require('uuid'); console.log('UUID module verified')\"",
+    "postinstall": "node -e \"require('uuid'); console.log('UUID module verified')\""
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5"
-  }
+    "express": "4.18.2",
+    "cors": "2.8.5",
+    "uuid": "9.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "private": true,
+  "description": "Leaderboard backend for React games",
+  "keywords": ["leaderboard", "games", "express"],
+  "author": "Your Name",
+  "license": "MIT"
 } 

@@ -1,7 +1,9 @@
+import config from './config';
+
 // Scoreboard service for managing game scores and leaderboards via backend API
 class ScoreboardService {
   constructor() {
-    this.apiBase = 'http://localhost:4000/api/leaderboard';
+    this.apiBase = `${config.backendUrl}/api/leaderboard`;
     this.leaderboards = {};
     this.adminCode = 'TomTheCoder';
   }
