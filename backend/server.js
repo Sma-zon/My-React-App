@@ -22,6 +22,23 @@ const ADMIN_CODE = 'TomTheCoder';
 app.use(cors());
 app.use(express.json());
 
+// Root route - API information
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Leaderboard Backend API',
+    version: '1.0.0',
+    endpoints: {
+      health: 'GET /health',
+      leaderboard: 'GET /api/leaderboard',
+      gameLeaderboard: 'GET /api/leaderboard/:game',
+      submitScore: 'POST /api/leaderboard/:game',
+      updateScore: 'PUT /api/leaderboard/:game/:scoreId (admin only)',
+      deleteScore: 'DELETE /api/leaderboard/:game/:scoreId (admin only)'
+    },
+    status: 'running'
+  });
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
