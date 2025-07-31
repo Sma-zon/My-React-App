@@ -484,7 +484,31 @@ function Frogger() {
       >
         Back to Main Menu
       </button>
-      <div style={{ width: '100%', maxWidth: 600, aspectRatio: '1.2', margin: '0 auto', marginBottom: canvasMarginBottom }}>
+      {/* Leaderboard Button */}
+      <button
+        onClick={showLeaderboardManually}
+        style={{
+          fontFamily: 'monospace',
+          fontSize: '1.2rem',
+          background: '#111',
+          color: '#0f0',
+          border: '3px solid #0f0',
+          padding: '12px 24px',
+          cursor: 'pointer',
+          marginTop: 8,
+          marginBottom: 16,
+          touchAction: 'manipulation',
+          boxShadow: '0 0 10px #0f0',
+          borderRadius: '8px',
+          fontWeight: 'bold',
+          display: 'block',
+          marginLeft: 'auto',
+          marginRight: 'auto'
+        }}
+      >
+        🏆 Leaderboard
+      </button>
+      <div style={{ width: '100%', maxWidth: 600, aspectRatio: '1', margin: '0 auto', marginTop: 24, marginBottom: 16 }}>
         <canvas
           ref={canvasRef}
           width={WIDTH}
@@ -544,28 +568,6 @@ function Frogger() {
           {score === 0 ? 'Start' : 'Restart'}
         </button>
       )}
-
-      {/* Leaderboard Button */}
-      <button
-        onClick={showLeaderboardManually}
-        style={{
-          fontFamily: 'monospace',
-          fontSize: '1.2rem',
-          background: '#111',
-          color: '#0f0',
-          border: '3px solid #0f0',
-          padding: '12px 24px',
-          cursor: 'pointer',
-          marginTop: 8,
-          marginBottom: 16,
-          touchAction: 'manipulation',
-          boxShadow: '0 0 10px #0f0',
-          borderRadius: '8px',
-          fontWeight: 'bold'
-        }}
-      >
-        🏆 Leaderboard
-      </button>
 
       {/* Score Entry Modal */}
       {showScoreEntry && (

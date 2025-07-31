@@ -439,7 +439,7 @@ function Pong() {
         textDecoration: 'none',
         boxShadow: '0 0 8px #0f0'
       }}>Back to Main Menu</Link>
-      <div style={{ width: '100%', maxWidth: 600, aspectRatio: '2', margin: '0 auto', marginBottom: 16 }}>
+      <div style={{ width: '100%', maxWidth: 600, aspectRatio: '2', margin: '0 auto', marginBottom: 56 }}>
         <canvas
           ref={canvasRef}
           width={WIDTH}
@@ -557,7 +557,7 @@ function Pong() {
       {isMobile && mode !== 2 && running && (
         <div style={{ 
           position: 'fixed', 
-          bottom: 20, 
+          bottom: 60, 
           left: '50%', 
           transform: 'translateX(-50%)', 
           zIndex: 1000,
