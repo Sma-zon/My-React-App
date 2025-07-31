@@ -113,6 +113,12 @@ function Sidescroller() {
           // Draw red blocks as normal size
           ctx.fillRect(obs.x, obs.y, OBSTACLE_WIDTH, OBSTACLE_HEIGHT);
         }
+        
+        // Show scored status with a small indicator
+        if (obs.scored) {
+          ctx.fillStyle = '#0f0';
+          ctx.fillRect(obs.x, obs.y - 5, obs.isYellow ? OBSTACLE_WIDTH * 2 : OBSTACLE_WIDTH, 3);
+        }
       }
       // Score
       ctx.font = '20px monospace';
@@ -161,7 +167,11 @@ function Sidescroller() {
         obs.x -= SPEED;
       }
       // Remove off-screen obstacles
-      gameRef.current.obstacles = gameRef.current.obstacles.filter(obs => obs.x + OBSTACLE_WIDTH > 0);
+      gameRef.current.obstacles = gameRef.current.obstacles.filter(obs => {
+        const obsWidth = obs.isYellow ? OBSTACLE_WIDTH * 2 : OBSTACLE_WIDTH;
+        return obs.x + obsWidth > 0;
+      });
+      
       // Collision
       for (const obs of gameRef.current.obstacles) {
         const obsWidth = obs.isYellow ? OBSTACLE_WIDTH * 2 : OBSTACLE_WIDTH;
@@ -179,15 +189,15 @@ function Sidescroller() {
           handleGameOver(currentScoreRef.current);
         }
       }
+      
       // Score: count up every time you jump over a block
       for (const obs of gameRef.current.obstacles) {
         const obsWidth = obs.isYellow ? OBSTACLE_WIDTH * 2 : OBSTACLE_WIDTH;
-        const obsHeight = obs.isYellow ? OBSTACLE_HEIGHT * 2 : OBSTACLE_HEIGHT;
         
         if (!obs.scored &&
           gameRef.current.playerX > obs.x + obsWidth &&
-          gameRef.current.playerX - SPEED <= obs.x + obsWidth &&
-          gameRef.current.playerY + PLAYER_SIZE < obs.y // Player is above the obstacle
+          gameRef.current.playerX - SPEED * 2 <= obs.x + obsWidth && // Wider detection window
+          gameRef.current.playerY + PLAYER_SIZE <= obs.y + 5 // More forgiving height check
         ) {
           obs.scored = true;
           soundManager.sidescrollerScore();
