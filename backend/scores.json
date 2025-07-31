@@ -2,57 +2,65 @@
   "2048": [
     {
       "id": "0c47b85e-8e1d-4328-b659-b08c85550a97",
-      "username": "Smazon",
+      "username": "GGY",
       "score": 1e+79,
-      "date": "2025-07-17T03:36:33.686Z"
+      "date": "2025-07-31T05:52:17.207Z"
     }
   ],
   "Snake": [
     {
-      "username": "Smazon",
+      "username": "GGY",
       "score": 999,
-      "date": "2025-07-17T03:17:48.946Z",
+      "date": "2025-07-31T05:52:42.588Z",
       "id": "c6d9a930-2592-4f45-b9ec-07d13531830a"
     }
   ],
   "Tetris": [
     {
-      "username": "ssss",
+      "username": "GGY",
       "score": 99999,
-      "date": "2025-07-17T03:19:04.427Z",
+      "date": "2025-07-31T05:52:55.812Z",
       "id": "9fbe9c60-9d56-4b83-b5d6-7fb343584439"
     }
   ],
   "Flappy Bird": [
     {
       "id": "f207c4b1-fc99-4c3f-9180-250b6e0b97de",
-      "username": "Smazon",
+      "username": "GGY",
       "score": 9999,
-      "date": "2025-07-17T03:20:03.117Z"
+      "date": "2025-07-31T05:53:08.398Z"
     }
   ],
   "MemoryMatch": [
     {
       "id": "b2353c28-4717-42d5-a4de-28e4964b5f57",
-      "username": "Smazon",
+      "username": "GGY",
       "score": 1e+59,
-      "date": "2025-07-17T03:23:06.776Z"
+      "date": "2025-07-31T05:53:22.228Z"
     }
   ],
   "Frogger": [
     {
       "id": "9ec246a9-001b-40cc-a39d-c2e033fd4db6",
-      "username": "Smazon",
+      "username": "GGY",
       "score": 10000,
-      "date": "2025-07-17T03:24:46.609Z"
+      "date": "2025-07-31T05:53:31.738Z"
     }
   ],
   "Breakout": [
     {
       "id": "abd05a90-338f-4195-83f2-eaa83fd47045",
-      "username": "Smazon",
+      "username": "GGY",
       "score": 491,
-      "date": "2025-07-17T03:42:06.541Z"
+      "date": "2025-07-31T05:54:05.195Z"
+    }
+  ],
+  "Sidescroller": [
+    {
+      "id": "3b464d86-b8f5-48b8-bae7-7782a26cde9b",
+      "username": "GGY",
+      "score": 0,
+      "date": "2025-07-31T05:54:23.263Z"
     }
   ]
 }
