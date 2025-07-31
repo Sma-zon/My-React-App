@@ -252,9 +252,8 @@ function Platformer() {
             coin.x + TILE_SIZE > cameraX && 
             coin.x < cameraX + WIDTH) {
           ctx.fillStyle = '#FFD700';
-          ctx.beginPath();
-          ctx.arc(coin.x + TILE_SIZE/2, coin.y + TILE_SIZE/2, TILE_SIZE/3, 0, Math.PI * 2);
-          ctx.fill();
+          // Draw 2x2 yellow blocks instead of circles
+          ctx.fillRect(coin.x, coin.y, TILE_SIZE * 2, TILE_SIZE * 2);
         }
       }
       
@@ -404,9 +403,9 @@ function Platformer() {
       for (let i = coins.length - 1; i >= 0; i--) {
         const coin = coins[i];
         if (!coin.collected && 
-            player.x < coin.x + TILE_SIZE &&
+            player.x < coin.x + TILE_SIZE * 2 &&
             player.x + PLAYER_SIZE > coin.x &&
-            player.y < coin.y + TILE_SIZE &&
+            player.y < coin.y + TILE_SIZE * 2 &&
             player.y + PLAYER_SIZE > coin.y) {
           coin.collected = true;
           gameRef.current.score += 10;

@@ -304,9 +304,29 @@ const Leaderboard = ({ gameName, onClose }) => {
                 value={adminCode}
                 onChange={e => setAdminCode(e.target.value)}
                 placeholder="Enter admin code"
-                style={{ fontFamily: 'monospace', width: '100%', marginBottom: 4 }}
+                style={{ 
+                  fontFamily: 'monospace', 
+                  width: '100%', 
+                  marginBottom: 4,
+                  background: '#222',
+                  color: '#666',
+                  border: '1px solid #333',
+                  borderRadius: 3,
+                  padding: '4px 8px',
+                  fontSize: '0.8rem'
+                }}
               />
-              <button type="submit" style={{ fontFamily: 'monospace', width: '100%', background: '#222', color: '#0f0', border: '1px solid #0f0', borderRadius: 3 }}>Unlock</button>
+              <button type="submit" style={{ 
+                fontFamily: 'monospace', 
+                width: '100%', 
+                background: '#222', 
+                color: '#666', 
+                border: '1px solid #333', 
+                borderRadius: 3,
+                padding: '4px 8px',
+                fontSize: '0.8rem',
+                cursor: 'pointer'
+              }}>Unlock</button>
               {adminError && <div style={{ color: '#f00', fontSize: '0.85rem', marginTop: 2 }}>{adminError}</div>}
             </form>
           )}

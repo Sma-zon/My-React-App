@@ -106,7 +106,13 @@ function Sidescroller() {
       // Obstacles
       for (const obs of gameRef.current.obstacles) {
         ctx.fillStyle = obs.isYellow ? '#ff0' : '#f00';
-        ctx.fillRect(obs.x, obs.y, OBSTACLE_WIDTH, OBSTACLE_HEIGHT);
+        if (obs.isYellow) {
+          // Draw yellow blocks as 2x2
+          ctx.fillRect(obs.x, obs.y, OBSTACLE_WIDTH * 2, OBSTACLE_HEIGHT * 2);
+        } else {
+          // Draw red blocks as normal size
+          ctx.fillRect(obs.x, obs.y, OBSTACLE_WIDTH, OBSTACLE_HEIGHT);
+        }
       }
       // Score
       ctx.font = '20px monospace';
@@ -158,10 +164,13 @@ function Sidescroller() {
       gameRef.current.obstacles = gameRef.current.obstacles.filter(obs => obs.x + OBSTACLE_WIDTH > 0);
       // Collision
       for (const obs of gameRef.current.obstacles) {
+        const obsWidth = obs.isYellow ? OBSTACLE_WIDTH * 2 : OBSTACLE_WIDTH;
+        const obsHeight = obs.isYellow ? OBSTACLE_HEIGHT * 2 : OBSTACLE_HEIGHT;
+        
         if (
-          gameRef.current.playerX < obs.x + OBSTACLE_WIDTH &&
+          gameRef.current.playerX < obs.x + obsWidth &&
           gameRef.current.playerX + PLAYER_SIZE > obs.x &&
-          gameRef.current.playerY < obs.y + OBSTACLE_HEIGHT &&
+          gameRef.current.playerY < obs.y + obsHeight &&
           gameRef.current.playerY + PLAYER_SIZE > obs.y
         ) {
           soundManager.sidescrollerGameOver();
@@ -172,9 +181,12 @@ function Sidescroller() {
       }
       // Score: count up every time you jump over a block
       for (const obs of gameRef.current.obstacles) {
+        const obsWidth = obs.isYellow ? OBSTACLE_WIDTH * 2 : OBSTACLE_WIDTH;
+        const obsHeight = obs.isYellow ? OBSTACLE_HEIGHT * 2 : OBSTACLE_HEIGHT;
+        
         if (!obs.scored &&
-          gameRef.current.playerX > obs.x + OBSTACLE_WIDTH &&
-          gameRef.current.playerX - SPEED <= obs.x + OBSTACLE_WIDTH &&
+          gameRef.current.playerX > obs.x + obsWidth &&
+          gameRef.current.playerX - SPEED <= obs.x + obsWidth &&
           gameRef.current.playerY + PLAYER_SIZE < obs.y // Player is above the obstacle
         ) {
           obs.scored = true;
