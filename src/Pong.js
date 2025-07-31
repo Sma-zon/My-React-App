@@ -218,11 +218,18 @@ function Pong() {
         ctx.arc(ballX, ballY, BALL_SIZE, 0, Math.PI * 2);
         ctx.fill();
         
-        // Ball
+        // Ball with dark outline for better visibility
         ctx.fillStyle = '#fff';
         ctx.beginPath();
         ctx.arc(ballX, ballY, BALL_SIZE / 2, 0, Math.PI * 2);
         ctx.fill();
+        
+        // Dark outline
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(ballX, ballY, BALL_SIZE / 2, 0, Math.PI * 2);
+        ctx.stroke();
         
         // Ball trail
         const trailLength = 5;
@@ -244,6 +251,13 @@ function Pong() {
         ctx.beginPath();
         ctx.arc(ballX + BALL_SIZE / 2, ballY + BALL_SIZE / 2, BALL_SIZE / 2, 0, Math.PI * 2);
         ctx.fill();
+        
+        // Dark outline
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(ballX + BALL_SIZE / 2, ballY + BALL_SIZE / 2, BALL_SIZE / 2, 0, Math.PI * 2);
+        ctx.stroke();
       }
       
       // Score with enhanced styling
