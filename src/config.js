@@ -2,7 +2,7 @@
 const config = {
   // Use deployed backend URL in production, localhost in development
   backendUrl: process.env.NODE_ENV === 'production' 
-    ? 'https://your-leaderboard-backend.onrender.com' // Replace with your actual Render URL
+    ? 'https://retrowebsitebackend.onrender.com' // Your deployed Render URL
     : 'http://localhost:4000'
 };
 
