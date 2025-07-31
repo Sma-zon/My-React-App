@@ -207,19 +207,19 @@ function Pong() {
         const ballY = gameRef.current.ballY;
         
         // Ball shadow
-        ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
         ctx.beginPath();
         ctx.arc(ballX + 2, ballY + 2, BALL_SIZE / 2, 0, Math.PI * 2);
         ctx.fill();
         
         // Ball glow
-        ctx.fillStyle = 'rgba(0, 255, 0, 0.2)';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
         ctx.beginPath();
         ctx.arc(ballX, ballY, BALL_SIZE, 0, Math.PI * 2);
         ctx.fill();
         
         // Ball
-        ctx.fillStyle = '#0f0';
+        ctx.fillStyle = '#fff';
         ctx.beginPath();
         ctx.arc(ballX, ballY, BALL_SIZE / 2, 0, Math.PI * 2);
         ctx.fill();
@@ -229,7 +229,7 @@ function Pong() {
         for (let i = 1; i <= trailLength; i++) {
           const alpha = 0.3 - (i * 0.05);
           const size = (BALL_SIZE / 2) - (i * 0.5);
-          ctx.fillStyle = `rgba(0, 255, 0, ${alpha})`;
+          ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
           ctx.beginPath();
           ctx.arc(ballX - gameRef.current.ballVX * i * 0.5, 
                   ballY - gameRef.current.ballVY * i * 0.5, 
@@ -240,7 +240,7 @@ function Pong() {
         // Draw stationary ball in center
         const ballX = WIDTH / 2 - BALL_SIZE / 2;
         const ballY = HEIGHT / 2 - BALL_SIZE / 2;
-        ctx.fillStyle = '#0f0';
+        ctx.fillStyle = '#fff';
         ctx.beginPath();
         ctx.arc(ballX + BALL_SIZE / 2, ballY + BALL_SIZE / 2, BALL_SIZE / 2, 0, Math.PI * 2);
         ctx.fill();
