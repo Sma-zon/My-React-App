@@ -17,6 +17,7 @@ import MemoryMatch from './MemoryMatch';
 import WordSearch from './WordSearch';
 import ConnectFour from './ConnectFour';
 import FlappyBird from './FlappyBird';
+import PacMan from './PacMan';
 import soundManager from './sounds';
 import GlobalLeaderboard from './GlobalLeaderboard';
 import { useState } from 'react';
@@ -59,6 +60,7 @@ function App() {
               <li><Link to="/word-search" style={{ color: '#00ff00' }}>Word Search</Link></li>
               <li><Link to="/connect-four" style={{ color: '#00ff00' }}>Connect Four</Link></li>
               <li><Link to="/flappy-bird" style={{ color: '#00ff00' }}>Flappy Bird</Link></li>
+              <li><Link to="/pac-man" style={{ color: '#00ff00' }}>Pac-Man</Link></li>
               <li><a href="https://my-first-react-app-kej4.vercel.app" target="_blank" rel="noopener noreferrer" style={{ color: '#00ff00' }}>Upgraded Snake</a></li>
             </ul>
           </nav>
@@ -112,6 +114,7 @@ function App() {
             <Route path="/word-search" element={<WordSearch />} />
             <Route path="/connect-four" element={<ConnectFour />} />
             <Route path="/flappy-bird" element={<FlappyBird />} />
+            <Route path="/pac-man" element={<PacMan />} />
             <Route path="/" element={<div>Select a game from the menu!</div>} />
           </Routes>
           
