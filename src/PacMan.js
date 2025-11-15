@@ -44,6 +44,7 @@ function PacMan() {
   const [gameOver, setGameOver] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [gameMap, setGameMap] = useState(MAP.map(row => [...row]));
+  const gameMapRef = useRef(MAP.map(row => [...row]));
   const gameRef = useRef({
     pacman: { x: 14, y: 17, dir: { x: 0, y: 0 }, nextDir: { x: 0, y: 0 }, mouth: 0 },
     ghosts: [
@@ -69,28 +70,35 @@ function PacMan() {
 
   // Initialize game map
   const initializeMap = () => {
-    setGameMap(MAP.map(row => [...row]));
+    const newMap = MAP.map(row => [...row]);
+    setGameMap(newMap);
+    gameMapRef.current = newMap;
   };
 
-  // Initialize on first load
+  // Initialize on first load - wait for canvas to be ready
   useEffect(() => {
-    if (!canvasRef.current) {
-      console.error("Canvas ref not available");
-      return;
-    }
+    // Wait a bit for canvas to be mounted
+    const timer = setTimeout(() => {
+      if (!canvasRef.current) {
+        console.error("Canvas ref not available");
+        return;
+      }
+      
+      // Ensure canvas context is available
+      const ctx = canvasRef.current.getContext('2d');
+      if (!ctx) {
+        console.error("Canvas context not available");
+        return;
+      }
+      
+      // Don't auto-start - let user click start button
+      initializeMap();
+      setGameOver(false);
+      setScore(0);
+      setLives(3);
+    }, 100);
     
-    // Ensure canvas context is available
-    const ctx = canvasRef.current.getContext('2d');
-    if (!ctx) {
-      console.error("Canvas context not available");
-      return;
-    }
-    
-    initializeMap();
-    setRunning(true);
-    setGameOver(false);
-    setScore(0);
-    setLives(3);
+    return () => clearTimeout(timer);
   }, []);
 
   // Handle keyboard input
@@ -140,12 +148,12 @@ function PacMan() {
 
   // Game loop
   useEffect(() => {
-    if (!running || !gameMap || gameMap.length === 0) return;
+    if (!running || !gameMapRef.current || gameMapRef.current.length === 0) return;
     
     // Check if position is valid
     const isValidPosition = (x, y) => {
       if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return false;
-      return gameMap[y] && gameMap[y][x] !== 0;
+      return gameMapRef.current[y] && gameMapRef.current[y][x] !== 0;
     };
 
     // Move entity
@@ -226,7 +234,7 @@ function PacMan() {
         // Draw map
         for (let y = 0; y < ROWS; y++) {
           for (let x = 0; x < COLS; x++) {
-            const cell = gameMap[y] ? gameMap[y][x] : 0;
+            const cell = gameMapRef.current[y] ? gameMapRef.current[y][x] : 0;
             if (cell === 0) {
               // Wall
               ctx.fillStyle = '#0066ff';
@@ -321,16 +329,18 @@ function PacMan() {
       }
       
       // Check for dots
-      if (gameMap[pacman.y] && gameMap[pacman.y][pacman.x] === 1) {
+      if (gameMapRef.current[pacman.y] && gameMapRef.current[pacman.y][pacman.x] === 1) {
         soundManager.pacmanEat();
-        const newMap = gameMap.map(row => [...row]);
+        const newMap = gameMapRef.current.map(row => [...row]);
         newMap[pacman.y][pacman.x] = 3;
+        gameMapRef.current = newMap;
         setGameMap(newMap);
         setScore(prev => prev + 10);
-      } else if (gameMap[pacman.y] && gameMap[pacman.y][pacman.x] === 2) {
+      } else if (gameMapRef.current[pacman.y] && gameMapRef.current[pacman.y][pacman.x] === 2) {
         soundManager.pacmanEatPower();
-        const newMap = gameMap.map(row => [...row]);
+        const newMap = gameMapRef.current.map(row => [...row]);
         newMap[pacman.y][pacman.x] = 3;
+        gameMapRef.current = newMap;
         setGameMap(newMap);
         setScore(prev => prev + 50);
         gameRef.current.powerMode = true;
@@ -367,26 +377,29 @@ function PacMan() {
           } else {
             // Pac-Man eaten
             soundManager.pacmanDeath();
-            setLives(prev => prev - 1);
-            if (lives <= 1) {
-              setGameOver(true);
-              setRunning(false);
-            } else {
-              // Reset positions
-              pacman.x = 14;
-              pacman.y = 17;
-              pacman.dir = { x: 0, y: 0 };
-              gameRef.current.ghosts.forEach((g, i) => {
-                g.x = 13 + i;
-                g.y = 11;
-              });
-            }
+            setLives(prev => {
+              const newLives = prev - 1;
+              if (newLives <= 0) {
+                setGameOver(true);
+                setRunning(false);
+              } else {
+                // Reset positions
+                pacman.x = 14;
+                pacman.y = 17;
+                pacman.dir = { x: 0, y: 0 };
+                gameRef.current.ghosts.forEach((g, i) => {
+                  g.x = 13 + i;
+                  g.y = 11;
+                });
+              }
+              return newLives;
+            });
           }
         }
       });
       
       // Check win condition
-      const dotsLeft = gameMap && gameMap.length > 0 ? gameMap.flat().filter(cell => cell === 1 || cell === 2).length : 0;
+      const dotsLeft = gameMapRef.current && gameMapRef.current.length > 0 ? gameMapRef.current.flat().filter(cell => cell === 1 || cell === 2).length : 0;
       if (dotsLeft === 0) {
         setGameOver(true);
         setRunning(false);
@@ -396,11 +409,17 @@ function PacMan() {
     function loop() {
       update();
       draw();
-      if (!gameOver) animationId = requestAnimationFrame(loop);
+      if (!gameOver && running) animationId = requestAnimationFrame(loop);
     }
-    loop();
-    return () => cancelAnimationFrame(animationId);
-  }, [running, gameOver, lives, score, gameMap]);
+    
+    if (running && !gameOver) {
+      loop();
+    }
+    
+    return () => {
+      if (animationId) cancelAnimationFrame(animationId);
+    };
+  }, [running, gameOver]);
 
   function handleStart() {
     soundManager.buttonClick();
