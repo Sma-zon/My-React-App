@@ -1,5 +1,6 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import soundManager from './sounds';
+import { Link } from 'react-router-dom';
 import MobileControls from './MobileControls';
 
 const WIDTH = 600;
@@ -42,19 +43,19 @@ function PacMan() {
   const [running, setRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [gameMap, setGameMap] = useState(() => MAP.map(row => [...row]));
   const gameMapRef = useRef(MAP.map(row => [...row]));
+  const animationRef = useRef(null);
+  
   const gameRef = useRef({
     pacman: { x: 14, y: 17, dir: { x: 0, y: 0 }, nextDir: { x: 0, y: 0 }, mouth: 0 },
     ghosts: [
-      { x: 14, y: 11, dir: { x: -1, y: 0 }, color: '#ff0000', mode: 'chase' },
-      { x: 13, y: 14, dir: { x: 1, y: 0 }, color: '#ffb8ff', mode: 'chase' },
-      { x: 14, y: 14, dir: { x: 0, y: -1 }, color: '#00ffff', mode: 'chase' },
-      { x: 15, y: 14, dir: { x: 0, y: 1 }, color: '#ffb852', mode: 'chase' }
+      { x: 14, y: 11, dir: { x: -1, y: 0 }, color: '#ff0000' },
+      { x: 13, y: 14, dir: { x: 1, y: 0 }, color: '#ffb8ff' },
+      { x: 14, y: 14, dir: { x: 0, y: -1 }, color: '#00ffff' },
+      { x: 15, y: 14, dir: { x: 0, y: 1 }, color: '#ffb852' }
     ],
     powerMode: false,
-    powerTimer: 0,
-    keys: {}
+    powerTimer: 0
   });
 
   // Check if device is mobile
@@ -67,54 +68,11 @@ function PacMan() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Initialize game map
-  const initializeMap = useCallback(() => {
-    const newMap = MAP.map(row => [...row]);
-    setGameMap(newMap);
-    gameMapRef.current = newMap;
-  }, []);
-
-  // Initialize on first load - wait for canvas to be ready
-  useEffect(() => {
-    try {
-      // Wait a bit for canvas to be mounted
-      const timer = setTimeout(() => {
-        try {
-          if (!canvasRef.current) {
-            // Canvas not ready yet, that's okay - will be handled when user clicks start
-            return;
-          }
-          
-          // Ensure canvas context is available
-          const ctx = canvasRef.current.getContext('2d');
-          if (!ctx) {
-            // Context not available yet, that's okay
-            return;
-          }
-          
-          // Don't auto-start - let user click start button
-          // Just initialize the map
-          initializeMap();
-          setGameOver(false);
-          setScore(0);
-          setLives(3);
-        } catch (error) {
-          console.error("Error in PacMan initialization:", error);
-        }
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    } catch (error) {
-      console.error("Error setting up PacMan initialization:", error);
-    }
-  }, []);
-
   // Handle keyboard input
   useEffect(() => {
     const handleKeyDown = (e) => {
-      gameRef.current.keys[e.key.toLowerCase()] = true;
+      if (!running || gameOver) return;
       
-      // Set next direction
       if (e.key === 'ArrowUp' || e.key === 'w') {
         gameRef.current.nextDir = { x: 0, y: -1 };
       } else if (e.key === 'ArrowDown' || e.key === 's') {
@@ -125,195 +83,175 @@ function PacMan() {
         gameRef.current.nextDir = { x: 1, y: 0 };
       }
     };
-    const handleKeyUp = (e) => {
-      gameRef.current.keys[e.key.toLowerCase()] = false;
-    };
+
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, []);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [running, gameOver]);
 
   // Touch controls
   const handleTouchDirection = (direction) => {
+    if (!running || gameOver) return;
     gameRef.current.nextDir = direction;
   };
 
-  // Check if position is valid (moved inside useEffect to access current gameMap)
-
-  // Fullscreen functionality
-  const handleFullscreen = () => {
-    if (typeof document === 'undefined') return;
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(err => {
-        console.log('Error attempting to enable fullscreen:', err);
-      });
-    } else {
-      document.exitFullscreen();
-    }
+  // Check if position is valid
+  const isValidPosition = (x, y) => {
+    if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return false;
+    return gameMapRef.current[y] && gameMapRef.current[y][x] !== 0;
   };
 
-  // Game loop
-  useEffect(() => {
-    if (!running || !gameMapRef.current || gameMapRef.current.length === 0) return;
+  // Move entity
+  const moveEntity = (entity, dir) => {
+    const newX = entity.x + dir.x;
+    const newY = entity.y + dir.y;
     
-    // Check if position is valid
-    const isValidPosition = (x, y) => {
-      if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return false;
-      return gameMapRef.current[y] && gameMapRef.current[y][x] !== 0;
-    };
+    // Handle tunnel
+    if (newX < 0) return { x: COLS - 1, y: newY };
+    if (newX >= COLS) return { x: 0, y: newY };
+    
+    if (isValidPosition(newX, newY)) {
+      return { x: newX, y: newY };
+    }
+    return { x: entity.x, y: entity.y };
+  };
 
-    // Move entity
-    const moveEntity = (entity, dir) => {
-      const newX = entity.x + dir.x;
-      const newY = entity.y + dir.y;
+  // Ghost AI
+  const getGhostDirection = (ghost) => {
+    const directions = [
+      { x: -1, y: 0 }, { x: 1, y: 0 }, { x: 0, y: -1 }, { x: 0, y: 1 }
+    ];
+    
+    if (gameRef.current.powerMode) {
+      // Scatter mode - move away from pacman
+      const validDirs = directions.filter(dir => {
+        if (dir.x === -ghost.dir.x && dir.y === -ghost.dir.y) return false;
+        const newPos = moveEntity(ghost, dir);
+        return newPos.x !== ghost.x || newPos.y !== ghost.y;
+      });
+      return validDirs[Math.floor(Math.random() * validDirs.length)] || ghost.dir;
+    } else {
+      // Chase mode - move towards pacman
+      const dx = gameRef.current.pacman.x - ghost.x;
+      const dy = gameRef.current.pacman.y - ghost.y;
       
-      // Handle tunnel
-      if (newX < 0) return { x: COLS - 1, y: newY };
-      if (newX >= COLS) return { x: 0, y: newY };
-      
-      if (isValidPosition(newX, newY)) {
-        return { x: newX, y: newY };
-      }
-      return { x: entity.x, y: entity.y };
-    };
-
-    // Ghost AI
-    const getGhostDirection = (ghost) => {
-      const directions = [
-        { x: -1, y: 0 }, { x: 1, y: 0 }, { x: 0, y: -1 }, { x: 0, y: 1 }
-      ];
-      
-      if (gameRef.current.powerMode) {
-        // Scatter mode - move away from pacman
-        const dx = ghost.x - gameRef.current.pacman.x;
-        const dy = ghost.y - gameRef.current.pacman.y;
-        const targetDir = { x: Math.sign(dx), y: Math.sign(dy) };
-        
-        // Find valid direction away from pacman
-        for (const dir of directions) {
-          if (dir.x !== -ghost.dir.x || dir.y !== -ghost.dir.y) {
-            const newPos = moveEntity(ghost, dir);
-            if (newPos.x !== ghost.x || newPos.y !== ghost.y) {
-              return dir;
-            }
-          }
-        }
-      } else {
-        // Chase mode - move towards pacman
-        const dx = gameRef.current.pacman.x - ghost.x;
-        const dy = gameRef.current.pacman.y - ghost.y;
-        
-        // Simple AI: prefer horizontal movement
-        if (Math.abs(dx) > Math.abs(dy)) {
-          const dir = { x: Math.sign(dx), y: 0 };
-          if (isValidPosition(ghost.x + dir.x, ghost.y + dir.y)) {
-            return dir;
-          }
-        }
-        
-        const dir = { x: 0, y: Math.sign(dy) };
+      if (Math.abs(dx) > Math.abs(dy)) {
+        const dir = { x: Math.sign(dx), y: 0 };
         if (isValidPosition(ghost.x + dir.x, ghost.y + dir.y)) {
           return dir;
         }
       }
       
-      // Random direction if can't move towards/away
-      const validDirs = directions.filter(dir => 
-        isValidPosition(ghost.x + dir.x, ghost.y + dir.y) &&
-        (dir.x !== -ghost.dir.x || dir.y !== -ghost.dir.y)
-      );
-      
-      return validDirs[Math.floor(Math.random() * validDirs.length)] || ghost.dir;
-    };
-    
-    let animationId;
-    function draw() {
-      try {
-        if (!canvasRef.current) return;
-        const ctx = canvasRef.current.getContext('2d');
-        if (!ctx) return;
-        
-        // Clear canvas
-        ctx.fillStyle = '#111';
-        ctx.fillRect(0, 0, WIDTH, HEIGHT);
-      
-        // Draw map
-        for (let y = 0; y < ROWS; y++) {
-          for (let x = 0; x < COLS; x++) {
-            const cell = gameMapRef.current[y] ? gameMapRef.current[y][x] : 0;
-            if (cell === 0) {
-              // Wall
-              ctx.fillStyle = '#0066ff';
-              ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-            } else if (cell === 1) {
-              // Dot
-              ctx.fillStyle = '#ffff00';
-              ctx.beginPath();
-              ctx.arc(x * CELL_SIZE + CELL_SIZE/2, y * CELL_SIZE + CELL_SIZE/2, 2, 0, Math.PI * 2);
-              ctx.fill();
-            } else if (cell === 2) {
-              // Power pellet
-              ctx.fillStyle = '#ffff00';
-              ctx.beginPath();
-              ctx.arc(x * CELL_SIZE + CELL_SIZE/2, y * CELL_SIZE + CELL_SIZE/2, 6, 0, Math.PI * 2);
-              ctx.fill();
-            }
-          }
-        }
-        
-        // Draw Pac-Man
-        const pacman = gameRef.current.pacman;
-        ctx.fillStyle = '#ffff00';
-        ctx.beginPath();
-        const centerX = pacman.x * CELL_SIZE + CELL_SIZE/2;
-        const centerY = pacman.y * CELL_SIZE + CELL_SIZE/2;
-        const radius = CELL_SIZE/2 - 2;
-        
-        let startAngle = 0;
-        let endAngle = Math.PI * 2;
-        
-        if (pacman.dir.x === 1) startAngle = 0.2;
-        else if (pacman.dir.x === -1) startAngle = Math.PI + 0.2;
-        else if (pacman.dir.y === -1) startAngle = Math.PI/2 + 0.2;
-        else if (pacman.dir.y === 1) startAngle = 3*Math.PI/2 + 0.2;
-        
-        if (pacman.dir.x !== 0 || pacman.dir.y !== 0) {
-          endAngle = startAngle + Math.PI * 2 - 0.4;
-        }
-        
-        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-        ctx.lineTo(centerX, centerY);
-        ctx.fill();
-        
-        // Draw ghosts
-        gameRef.current.ghosts.forEach(ghost => {
-          ctx.fillStyle = gameRef.current.powerMode ? '#0000ff' : ghost.color;
-          ctx.beginPath();
-          ctx.arc(ghost.x * CELL_SIZE + CELL_SIZE/2, ghost.y * CELL_SIZE + CELL_SIZE/2, CELL_SIZE/2 - 2, 0, Math.PI * 2);
-          ctx.fill();
-        });
-        
-        // Draw score and lives
-        ctx.font = '20px monospace';
-        ctx.fillStyle = '#0f0';
-        ctx.fillText(`Score: ${score}`, 10, 30);
-        ctx.fillText(`Lives: ${lives}`, WIDTH - 100, 30);
-        
-        if (gameOver) {
-          ctx.font = '32px monospace';
-          ctx.fillStyle = '#f00';
-          ctx.textAlign = 'center';
-          ctx.fillText('Game Over', WIDTH / 2, HEIGHT / 2);
-        }
-      } catch (e) {
-        console.error('Error drawing game state:', e);
+      const dir = { x: 0, y: Math.sign(dy) };
+      if (isValidPosition(ghost.x + dir.x, ghost.y + dir.y)) {
+        return dir;
       }
     }
     
-    function update() {
+    // Random direction
+    const validDirs = directions.filter(dir => 
+      isValidPosition(ghost.x + dir.x, ghost.y + dir.y) &&
+      (dir.x !== -ghost.dir.x || dir.y !== -ghost.dir.y)
+    );
+    
+    return validDirs[Math.floor(Math.random() * validDirs.length)] || ghost.dir;
+  };
+
+  // Game loop
+  useEffect(() => {
+    if (!running || !canvasRef.current) return;
+    
+    let lastUpdate = 0;
+    const moveDelay = 150; // milliseconds between moves
+    
+    function draw() {
+      if (!canvasRef.current) return;
+      const ctx = canvasRef.current.getContext('2d');
+      if (!ctx) return;
+      
+      // Clear canvas
+      ctx.fillStyle = '#111';
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+      
+      // Draw map
+      for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+          const cell = gameMapRef.current[y] ? gameMapRef.current[y][x] : 0;
+          if (cell === 0) {
+            // Wall
+            ctx.fillStyle = '#0066ff';
+            ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+          } else if (cell === 1) {
+            // Dot
+            ctx.fillStyle = '#ffff00';
+            ctx.beginPath();
+            ctx.arc(x * CELL_SIZE + CELL_SIZE/2, y * CELL_SIZE + CELL_SIZE/2, 2, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (cell === 2) {
+            // Power pellet
+            ctx.fillStyle = '#ffff00';
+            ctx.beginPath();
+            ctx.arc(x * CELL_SIZE + CELL_SIZE/2, y * CELL_SIZE + CELL_SIZE/2, 6, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+      
+      // Draw Pac-Man
+      const pacman = gameRef.current.pacman;
+      ctx.fillStyle = '#ffff00';
+      ctx.beginPath();
+      const centerX = pacman.x * CELL_SIZE + CELL_SIZE/2;
+      const centerY = pacman.y * CELL_SIZE + CELL_SIZE/2;
+      const radius = CELL_SIZE/2 - 2;
+      
+      let startAngle = 0;
+      let endAngle = Math.PI * 2;
+      
+      if (pacman.dir.x === 1) startAngle = 0.2;
+      else if (pacman.dir.x === -1) startAngle = Math.PI + 0.2;
+      else if (pacman.dir.y === -1) startAngle = Math.PI/2 + 0.2;
+      else if (pacman.dir.y === 1) startAngle = 3*Math.PI/2 + 0.2;
+      
+      if (pacman.dir.x !== 0 || pacman.dir.y !== 0) {
+        endAngle = startAngle + Math.PI * 2 - 0.4;
+      }
+      
+      ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+      ctx.lineTo(centerX, centerY);
+      ctx.fill();
+      
+      // Draw ghosts
+      gameRef.current.ghosts.forEach(ghost => {
+        ctx.fillStyle = gameRef.current.powerMode ? '#0000ff' : ghost.color;
+        ctx.beginPath();
+        ctx.arc(ghost.x * CELL_SIZE + CELL_SIZE/2, ghost.y * CELL_SIZE + CELL_SIZE/2, CELL_SIZE/2 - 2, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      
+      // Draw score and lives
+      ctx.font = '20px monospace';
+      ctx.fillStyle = '#0f0';
+      ctx.fillText(`Score: ${score}`, 10, 30);
+      ctx.fillText(`Lives: ${lives}`, WIDTH - 100, 30);
+      
+      if (gameOver) {
+        ctx.font = '32px monospace';
+        ctx.fillStyle = '#f00';
+        ctx.textAlign = 'center';
+        ctx.fillText('Game Over', WIDTH / 2, HEIGHT / 2);
+      }
+    }
+    
+    function update(currentTime) {
+      if (!running || gameOver) return;
+      
+      if (currentTime - lastUpdate < moveDelay) {
+        draw();
+        animationRef.current = requestAnimationFrame(update);
+        return;
+      }
+      lastUpdate = currentTime;
+      
       // Update Pac-Man
       const pacman = gameRef.current.pacman;
       
@@ -332,9 +270,6 @@ function PacMan() {
         pacman.x = newPos.x;
         pacman.y = newPos.y;
         soundManager.pacmanMove();
-        
-        // Animate mouth
-        pacman.mouth = (pacman.mouth + 0.2) % 1;
       }
       
       // Check for dots
@@ -343,17 +278,15 @@ function PacMan() {
         const newMap = gameMapRef.current.map(row => [...row]);
         newMap[pacman.y][pacman.x] = 3;
         gameMapRef.current = newMap;
-        setGameMap(newMap);
         setScore(prev => prev + 10);
       } else if (gameMapRef.current[pacman.y] && gameMapRef.current[pacman.y][pacman.x] === 2) {
         soundManager.pacmanEatPower();
         const newMap = gameMapRef.current.map(row => [...row]);
         newMap[pacman.y][pacman.x] = 3;
         gameMapRef.current = newMap;
-        setGameMap(newMap);
         setScore(prev => prev + 50);
         gameRef.current.powerMode = true;
-        gameRef.current.powerTimer = 300; // 5 seconds at 60fps
+        gameRef.current.powerTimer = 300;
       }
       
       // Update power mode
@@ -366,12 +299,10 @@ function PacMan() {
       
       // Update ghosts
       gameRef.current.ghosts.forEach(ghost => {
-        // Change direction occasionally
-        if (Math.random() < 0.02) {
+        if (Math.random() < 0.05) {
           ghost.dir = getGhostDirection(ghost);
         }
         
-        // Move ghost
         const newPos = moveEntity(ghost, ghost.dir);
         ghost.x = newPos.x;
         ghost.y = newPos.y;
@@ -408,39 +339,34 @@ function PacMan() {
       });
       
       // Check win condition
-      const dotsLeft = gameMapRef.current && gameMapRef.current.length > 0 ? gameMapRef.current.flat().filter(cell => cell === 1 || cell === 2).length : 0;
+      const dotsLeft = gameMapRef.current.flat().filter(cell => cell === 1 || cell === 2).length;
       if (dotsLeft === 0) {
         setGameOver(true);
         setRunning(false);
       }
-    }
-    
-    function loop() {
-      update();
+      
       draw();
-      if (!gameOver && running) animationId = requestAnimationFrame(loop);
+      animationRef.current = requestAnimationFrame(update);
     }
     
-    if (running && !gameOver) {
-      loop();
-    }
+    animationRef.current = requestAnimationFrame(update);
     
     return () => {
-      if (animationId) {
-        cancelAnimationFrame(animationId);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [running, gameOver, initializeMap]);
+  }, [running, gameOver, score, lives]);
 
   function handleStart() {
     soundManager.buttonClick();
-    initializeMap();
+    gameMapRef.current = MAP.map(row => [...row]);
     gameRef.current.pacman = { x: 14, y: 17, dir: { x: 0, y: 0 }, nextDir: { x: 0, y: 0 }, mouth: 0 };
     gameRef.current.ghosts = [
-      { x: 14, y: 11, dir: { x: -1, y: 0 }, color: '#ff0000', mode: 'chase' },
-      { x: 13, y: 14, dir: { x: 1, y: 0 }, color: '#ffb8ff', mode: 'chase' },
-      { x: 14, y: 14, dir: { x: 0, y: -1 }, color: '#00ffff', mode: 'chase' },
-      { x: 15, y: 14, dir: { x: 0, y: 1 }, color: '#ffb852', mode: 'chase' }
+      { x: 14, y: 11, dir: { x: -1, y: 0 }, color: '#ff0000' },
+      { x: 13, y: 14, dir: { x: 1, y: 0 }, color: '#ffb8ff' },
+      { x: 14, y: 14, dir: { x: 0, y: -1 }, color: '#00ffff' },
+      { x: 15, y: 14, dir: { x: 0, y: 1 }, color: '#ffb852' }
     ];
     gameRef.current.powerMode = false;
     gameRef.current.powerTimer = 0;
@@ -450,11 +376,22 @@ function PacMan() {
     setRunning(true);
   }
 
+  // Fullscreen functionality
+  const handleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.log('Error attempting to enable fullscreen:', err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <h2 style={{ fontFamily: 'monospace', color: '#00ff00', textShadow: '2px 2px #000' }}>Pac-Man</h2>
-      <button 
-        onClick={() => window.location.href = '/'}
+      <Link 
+        to="/"
         style={{
           display: 'inline-block',
           marginBottom: 16,
@@ -473,8 +410,8 @@ function PacMan() {
         }}
       >
         Back to Main Menu
-      </button>
-      <div style={{ width: '100%', maxWidth: 448, aspectRatio: '1.2', margin: '0 auto', marginBottom: 16 }}>
+      </Link>
+      <div style={{ width: '100%', maxWidth: 600, aspectRatio: '1', marginBottom: 16 }}>
         <canvas
           ref={canvasRef}
           width={WIDTH}
@@ -506,6 +443,7 @@ function PacMan() {
       }}>
         Controls: {isMobile ? 'Touch D-pad below' : 'Arrow Keys or WASD'}
       </div>
+      
       {/* Mobile D-pad Controls */}
       {isMobile && running && !gameOver && (
         <div style={{ 
@@ -529,7 +467,18 @@ function PacMan() {
       )}
       
       {(!running || gameOver) && (
-        <button onClick={handleStart} style={{ fontFamily: 'monospace', fontSize: '1.2rem', background: '#222', color: '#0f0', border: '2px solid #0f0', padding: '8px 16px', cursor: 'pointer' }}>
+        <button 
+          onClick={handleStart} 
+          style={{ 
+            fontFamily: 'monospace', 
+            fontSize: '1.2rem', 
+            background: '#222', 
+            color: '#0f0', 
+            border: '2px solid #0f0', 
+            padding: '8px 16px', 
+            cursor: 'pointer' 
+          }}
+        >
           {score === 0 ? 'Start' : 'Restart'}
         </button>
       )}
@@ -556,10 +505,11 @@ function PacMan() {
           fontWeight: 'bold'
         }}
       >
-        {typeof document !== 'undefined' && document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}
+        {document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}
       </button>
     </div>
   );
 }
 
-export default PacMan; 
+export default PacMan;
+
