@@ -1,6 +1,5 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import soundManager from './sounds';
-import { Link } from 'react-router-dom';
 import MobileControls from './MobileControls';
 
 const WIDTH = 600;
@@ -43,7 +42,7 @@ function PacMan() {
   const [running, setRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [gameMap, setGameMap] = useState(MAP.map(row => [...row]));
+  const [gameMap, setGameMap] = useState(() => MAP.map(row => [...row]));
   const gameMapRef = useRef(MAP.map(row => [...row]));
   const gameRef = useRef({
     pacman: { x: 14, y: 17, dir: { x: 0, y: 0 }, nextDir: { x: 0, y: 0 }, mouth: 0 },
@@ -69,36 +68,45 @@ function PacMan() {
   }, []);
 
   // Initialize game map
-  const initializeMap = () => {
+  const initializeMap = useCallback(() => {
     const newMap = MAP.map(row => [...row]);
     setGameMap(newMap);
     gameMapRef.current = newMap;
-  };
+  }, []);
 
   // Initialize on first load - wait for canvas to be ready
   useEffect(() => {
-    // Wait a bit for canvas to be mounted
-    const timer = setTimeout(() => {
-      if (!canvasRef.current) {
-        console.error("Canvas ref not available");
-        return;
-      }
+    try {
+      // Wait a bit for canvas to be mounted
+      const timer = setTimeout(() => {
+        try {
+          if (!canvasRef.current) {
+            // Canvas not ready yet, that's okay - will be handled when user clicks start
+            return;
+          }
+          
+          // Ensure canvas context is available
+          const ctx = canvasRef.current.getContext('2d');
+          if (!ctx) {
+            // Context not available yet, that's okay
+            return;
+          }
+          
+          // Don't auto-start - let user click start button
+          // Just initialize the map
+          initializeMap();
+          setGameOver(false);
+          setScore(0);
+          setLives(3);
+        } catch (error) {
+          console.error("Error in PacMan initialization:", error);
+        }
+      }, 100);
       
-      // Ensure canvas context is available
-      const ctx = canvasRef.current.getContext('2d');
-      if (!ctx) {
-        console.error("Canvas context not available");
-        return;
-      }
-      
-      // Don't auto-start - let user click start button
-      initializeMap();
-      setGameOver(false);
-      setScore(0);
-      setLives(3);
-    }, 100);
-    
-    return () => clearTimeout(timer);
+      return () => clearTimeout(timer);
+    } catch (error) {
+      console.error("Error setting up PacMan initialization:", error);
+    }
   }, []);
 
   // Handle keyboard input
@@ -137,6 +145,7 @@ function PacMan() {
 
   // Fullscreen functionality
   const handleFullscreen = () => {
+    if (typeof document === 'undefined') return;
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(err => {
         console.log('Error attempting to enable fullscreen:', err);
@@ -417,9 +426,11 @@ function PacMan() {
     }
     
     return () => {
-      if (animationId) cancelAnimationFrame(animationId);
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
     };
-  }, [running, gameOver]);
+  }, [running, gameOver, initializeMap]);
 
   function handleStart() {
     soundManager.buttonClick();
@@ -545,7 +556,7 @@ function PacMan() {
           fontWeight: 'bold'
         }}
       >
-        {document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}
+        {typeof document !== 'undefined' && document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}
       </button>
     </div>
   );
