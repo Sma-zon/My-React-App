@@ -43,7 +43,7 @@ function PacMan() {
   const [running, setRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [gameMap, setGameMap] = useState([]);
+  const [gameMap, setGameMap] = useState(MAP.map(row => [...row]));
   const gameRef = useRef({
     pacman: { x: 14, y: 17, dir: { x: 0, y: 0 }, nextDir: { x: 0, y: 0 }, mouth: 0 },
     ghosts: [
@@ -125,75 +125,7 @@ function PacMan() {
     gameRef.current.nextDir = direction;
   };
 
-  // Check if position is valid
-  const isValidPosition = (x, y) => {
-    if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return false;
-    return gameMap[y] && gameMap[y][x] !== 0;
-  };
-
-  // Move entity
-  const moveEntity = (entity, dir) => {
-    const newX = entity.x + dir.x;
-    const newY = entity.y + dir.y;
-    
-    // Handle tunnel
-    if (newX < 0) return { x: COLS - 1, y: newY };
-    if (newX >= COLS) return { x: 0, y: newY };
-    
-    if (isValidPosition(newX, newY)) {
-      return { x: newX, y: newY };
-    }
-    return { x: entity.x, y: entity.y };
-  };
-
-  // Ghost AI
-  const getGhostDirection = (ghost) => {
-    const directions = [
-      { x: -1, y: 0 }, { x: 1, y: 0 }, { x: 0, y: -1 }, { x: 0, y: 1 }
-    ];
-    
-    if (gameRef.current.powerMode) {
-      // Scatter mode - move away from pacman
-      const dx = ghost.x - gameRef.current.pacman.x;
-      const dy = ghost.y - gameRef.current.pacman.y;
-      const targetDir = { x: Math.sign(dx), y: Math.sign(dy) };
-      
-      // Find valid direction away from pacman
-      for (const dir of directions) {
-        if (dir.x !== -ghost.dir.x || dir.y !== -ghost.dir.y) {
-          const newPos = moveEntity(ghost, dir);
-          if (newPos.x !== ghost.x || newPos.y !== ghost.y) {
-            return dir;
-          }
-        }
-      }
-    } else {
-      // Chase mode - move towards pacman
-      const dx = gameRef.current.pacman.x - ghost.x;
-      const dy = gameRef.current.pacman.y - ghost.y;
-      
-      // Simple AI: prefer horizontal movement
-      if (Math.abs(dx) > Math.abs(dy)) {
-        const dir = { x: Math.sign(dx), y: 0 };
-        if (isValidPosition(ghost.x + dir.x, ghost.y + dir.y)) {
-          return dir;
-        }
-      }
-      
-      const dir = { x: 0, y: Math.sign(dy) };
-      if (isValidPosition(ghost.x + dir.x, ghost.y + dir.y)) {
-        return dir;
-      }
-    }
-    
-    // Random direction if can't move towards/away
-    const validDirs = directions.filter(dir => 
-      isValidPosition(ghost.x + dir.x, ghost.y + dir.y) &&
-      (dir.x !== -ghost.dir.x || dir.y !== -ghost.dir.y)
-    );
-    
-    return validDirs[Math.floor(Math.random() * validDirs.length)] || ghost.dir;
-  };
+  // Check if position is valid (moved inside useEffect to access current gameMap)
 
   // Fullscreen functionality
   const handleFullscreen = () => {
@@ -208,12 +140,84 @@ function PacMan() {
 
   // Game loop
   useEffect(() => {
-    if (!running) return;
+    if (!running || !gameMap || gameMap.length === 0) return;
+    
+    // Check if position is valid
+    const isValidPosition = (x, y) => {
+      if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return false;
+      return gameMap[y] && gameMap[y][x] !== 0;
+    };
+
+    // Move entity
+    const moveEntity = (entity, dir) => {
+      const newX = entity.x + dir.x;
+      const newY = entity.y + dir.y;
+      
+      // Handle tunnel
+      if (newX < 0) return { x: COLS - 1, y: newY };
+      if (newX >= COLS) return { x: 0, y: newY };
+      
+      if (isValidPosition(newX, newY)) {
+        return { x: newX, y: newY };
+      }
+      return { x: entity.x, y: entity.y };
+    };
+
+    // Ghost AI
+    const getGhostDirection = (ghost) => {
+      const directions = [
+        { x: -1, y: 0 }, { x: 1, y: 0 }, { x: 0, y: -1 }, { x: 0, y: 1 }
+      ];
+      
+      if (gameRef.current.powerMode) {
+        // Scatter mode - move away from pacman
+        const dx = ghost.x - gameRef.current.pacman.x;
+        const dy = ghost.y - gameRef.current.pacman.y;
+        const targetDir = { x: Math.sign(dx), y: Math.sign(dy) };
+        
+        // Find valid direction away from pacman
+        for (const dir of directions) {
+          if (dir.x !== -ghost.dir.x || dir.y !== -ghost.dir.y) {
+            const newPos = moveEntity(ghost, dir);
+            if (newPos.x !== ghost.x || newPos.y !== ghost.y) {
+              return dir;
+            }
+          }
+        }
+      } else {
+        // Chase mode - move towards pacman
+        const dx = gameRef.current.pacman.x - ghost.x;
+        const dy = gameRef.current.pacman.y - ghost.y;
+        
+        // Simple AI: prefer horizontal movement
+        if (Math.abs(dx) > Math.abs(dy)) {
+          const dir = { x: Math.sign(dx), y: 0 };
+          if (isValidPosition(ghost.x + dir.x, ghost.y + dir.y)) {
+            return dir;
+          }
+        }
+        
+        const dir = { x: 0, y: Math.sign(dy) };
+        if (isValidPosition(ghost.x + dir.x, ghost.y + dir.y)) {
+          return dir;
+        }
+      }
+      
+      // Random direction if can't move towards/away
+      const validDirs = directions.filter(dir => 
+        isValidPosition(ghost.x + dir.x, ghost.y + dir.y) &&
+        (dir.x !== -ghost.dir.x || dir.y !== -ghost.dir.y)
+      );
+      
+      return validDirs[Math.floor(Math.random() * validDirs.length)] || ghost.dir;
+    };
     
     let animationId;
     function draw() {
       try {
+        if (!canvasRef.current) return;
         const ctx = canvasRef.current.getContext('2d');
+        if (!ctx) return;
         
         // Clear canvas
         ctx.fillStyle = '#111';
