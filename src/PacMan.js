@@ -48,15 +48,17 @@ function PacMan() {
   const [isMobile, setIsMobile] = useState(false);
   const gameMapRef = useRef(MAP.map(row => [...row]));
   const animationRef = useRef(null);
+  const lastPowerUpdateRef = useRef(0);
+  const lastMoveUpdateRef = useRef(0);
   
   const gameRef = useRef({
     pacman: { x: 15, y: 23, dir: { x: 0, y: 0 }, nextDir: { x: 0, y: 0 }, mouth: 0 },
     nextDir: { x: 0, y: 0 },
     ghosts: [
-      { x: 13, y: 12, dir: { x: -1, y: 0 }, color: '#ff0000' },
-      { x: 14, y: 12, dir: { x: 1, y: 0 }, color: '#ffb8ff' },
-      { x: 15, y: 12, dir: { x: 0, y: -1 }, color: '#00ffff' },
-      { x: 16, y: 12, dir: { x: 0, y: 1 }, color: '#ffb852' }
+      { x: 12, y: 14, dir: { x: -1, y: 0 }, color: '#ff0000', isEaten: false },
+      { x: 13, y: 14, dir: { x: 1, y: 0 }, color: '#ffb8ff', isEaten: false },
+      { x: 14, y: 14, dir: { x: 0, y: -1 }, color: '#00ffff', isEaten: false },
+      { x: 15, y: 14, dir: { x: 0, y: 1 }, color: '#ffb852', isEaten: false }
     ],
     powerMode: false,
     powerTimer: 0
@@ -120,6 +122,48 @@ function PacMan() {
     return { x: entity.x, y: entity.y };
   };
 
+  // BFS to find shortest path distance from a position to target
+  const findPathDistance = (startX, startY, targetX, targetY, maxDepth = 20) => {
+    const queue = [{ x: startX, y: startY, depth: 0 }];
+    const visited = new Set();
+    visited.add(`${startX},${startY}`);
+    
+    const directions = [
+      { x: -1, y: 0 }, { x: 1, y: 0 }, { x: 0, y: -1 }, { x: 0, y: 1 }
+    ];
+    
+    while (queue.length > 0) {
+      const current = queue.shift();
+      
+      // Found target
+      if (current.x === targetX && current.y === targetY) {
+        return current.depth;
+      }
+      
+      // Limit search depth
+      if (current.depth >= maxDepth) continue;
+      
+      // Check all directions
+      for (const dir of directions) {
+        let newX = current.x + dir.x;
+        let newY = current.y + dir.y;
+        
+        // Handle tunnel
+        if (newX < 0) newX = COLS - 1;
+        if (newX >= COLS) newX = 0;
+        
+        const key = `${newX},${newY}`;
+        if (!visited.has(key) && isValidPosition(newX, newY)) {
+          visited.add(key);
+          queue.push({ x: newX, y: newY, depth: current.depth + 1 });
+        }
+      }
+    }
+    
+    // If path not found, return Manhattan distance as fallback
+    return Math.abs(startX - targetX) + Math.abs(startY - targetY);
+  };
+
   // Ghost AI
   const getGhostDirection = (ghost) => {
     const directions = [
@@ -135,43 +179,37 @@ function PacMan() {
     
     if (validDirs.length === 0) return ghost.dir; // No valid directions, keep current
     
-    if (gameRef.current.powerMode) {
-      // Escape mode - move away from Pac-Man
-      const pacman = gameRef.current.pacman;
-      const dx = ghost.x - pacman.x; // Reversed: away from Pac-Man
-      const dy = ghost.y - pacman.y;
-      
-      // Find direction that maximizes distance from Pac-Man
+    // If ghost was eaten, it's in normal mode (chasing) even during power mode
+    const isInPowerMode = gameRef.current.powerMode && !ghost.isEaten;
+    const pacman = gameRef.current.pacman;
+    
+    if (isInPowerMode) {
+      // Escape mode - find direction that leads furthest from Pac-Man using pathfinding
       let bestDir = validDirs[0];
       let maxDistance = -Infinity;
       
       validDirs.forEach(dir => {
-        const testX = ghost.x + dir.x;
-        const testY = ghost.y + dir.y;
-        const distance = Math.abs(testX - pacman.x) + Math.abs(testY - pacman.y);
-        if (distance > maxDistance) {
-          maxDistance = distance;
+        const newPos = moveEntity(ghost, dir);
+        // Calculate path distance from new position to Pac-Man (we want to maximize this)
+        const pathDistance = findPathDistance(newPos.x, newPos.y, pacman.x, pacman.y, 15);
+        if (pathDistance > maxDistance) {
+          maxDistance = pathDistance;
           bestDir = dir;
         }
       });
       
       return bestDir;
     } else {
-      // Chase mode - move towards Pac-Man
-      const pacman = gameRef.current.pacman;
-      const dx = pacman.x - ghost.x;
-      const dy = pacman.y - ghost.y;
-      
-      // Prefer direction that gets closer to Pac-Man
+      // Chase mode - find direction that leads to shortest path to Pac-Man
       let bestDir = validDirs[0];
       let minDistance = Infinity;
       
       validDirs.forEach(dir => {
-        const testX = ghost.x + dir.x;
-        const testY = ghost.y + dir.y;
-        const distance = Math.abs(testX - pacman.x) + Math.abs(testY - pacman.y);
-        if (distance < minDistance) {
-          minDistance = distance;
+        const newPos = moveEntity(ghost, dir);
+        // Calculate shortest path distance from new position to Pac-Man
+        const pathDistance = findPathDistance(newPos.x, newPos.y, pacman.x, pacman.y, 15);
+        if (pathDistance < minDistance) {
+          minDistance = pathDistance;
           bestDir = dir;
         }
       });
@@ -184,8 +222,6 @@ function PacMan() {
   useEffect(() => {
     if (!running || !canvasRef.current) return;
     
-    let lastUpdate = 0;
-    let lastPowerUpdate = 0;
     const moveDelay = 300; // milliseconds between moves - much slower, classic speed
     const powerModeDuration = 10000; // 10 seconds in milliseconds
     
@@ -249,12 +285,12 @@ function PacMan() {
         endAngle = Math.PI - mouthAngle / 2;
       } else if (pacman.dir.y === -1) {
         // Up
-        startAngle = Math.PI/2 + mouthAngle / 2;
-        endAngle = Math.PI/2 - mouthAngle / 2;
-      } else if (pacman.dir.y === 1) {
-        // Down
         startAngle = 3*Math.PI/2 + mouthAngle / 2;
         endAngle = 3*Math.PI/2 - mouthAngle / 2;
+      } else if (pacman.dir.y === 1) {
+        // Down
+        startAngle = Math.PI/2 + mouthAngle / 2;
+        endAngle = Math.PI/2 - mouthAngle / 2;
       } else {
         // Not moving - default to right
         startAngle = mouthAngle / 2;
@@ -274,7 +310,8 @@ function PacMan() {
           const y = ghost.y * CELL_SIZE + CELL_SIZE/2;
           const radius = CELL_SIZE/2 - 2;
           
-          ctx.fillStyle = gameRef.current.powerMode ? '#2121ff' : ghost.color;
+          // Ghost is blue only if in power mode AND not eaten
+          ctx.fillStyle = (gameRef.current.powerMode && !ghost.isEaten) ? '#2121ff' : ghost.color;
           
           // Draw ghost body (semi-circle with wavy bottom)
           ctx.beginPath();
@@ -370,13 +407,13 @@ function PacMan() {
       }
       
       // Consistent frame timing - only move when enough time has passed
-      if (currentTime - lastUpdate < moveDelay) {
+      if (currentTime - lastMoveUpdateRef.current < moveDelay) {
         draw();
         animationRef.current = requestAnimationFrame(update);
         return;
       }
       
-      lastUpdate = currentTime;
+      lastMoveUpdateRef.current = currentTime;
       
       // Update Pac-Man
       const pacman = gameRef.current.pacman;
@@ -426,13 +463,23 @@ function PacMan() {
         gameMapRef.current = newMap;
         setScore(prev => prev + 50);
         gameRef.current.powerMode = true;
-        lastPowerUpdate = currentTime;
+        lastPowerUpdateRef.current = currentTime;
+        // Force all ghosts to immediately change direction when power mode starts
+        gameRef.current.ghosts.forEach(ghost => {
+          if (!ghost.isEaten) {
+            ghost.dir = getGhostDirection(ghost);
+          }
+        });
       }
       
       // Update power mode (time-based, not frame-based)
       if (gameRef.current.powerMode) {
-        if (currentTime - lastPowerUpdate >= powerModeDuration) {
+        if (currentTime - lastPowerUpdateRef.current >= powerModeDuration) {
           gameRef.current.powerMode = false;
+          // Reset all ghosts' eaten status when power mode ends
+          gameRef.current.ghosts.forEach(ghost => {
+            ghost.isEaten = false;
+          });
         }
       }
       
@@ -441,18 +488,28 @@ function PacMan() {
         gameRef.current.ghosts.forEach(ghost => {
           if (!ghost || ghost.x === undefined || ghost.y === undefined) return;
           
-          // Check if ghost's current direction is valid, if not, get a new one
-          const currentDir = ghost.dir || { x: 0, y: 0 };
-          const testPos = moveEntity(ghost, currentDir);
-          if (testPos.x === ghost.x && testPos.y === ghost.y) {
-            // Ghost is stuck, get a new direction
-            ghost.dir = getGhostDirection(ghost);
-          } else if (Math.random() < 0.1) {
-            // Occasionally change direction even if not stuck (more frequent than before)
-            const newDir = getGhostDirection(ghost);
-            const newTestPos = moveEntity(ghost, newDir);
-            if (newTestPos.x !== ghost.x || newTestPos.y !== ghost.y) {
-              ghost.dir = newDir;
+          // Always recalculate direction for optimal pathfinding
+          // This ensures ghosts immediately respond to power mode changes and always take optimal routes
+          const newDir = getGhostDirection(ghost);
+          const newTestPos = moveEntity(ghost, newDir);
+          if (newTestPos.x !== ghost.x || newTestPos.y !== ghost.y) {
+            ghost.dir = newDir;
+          } else {
+            // If optimal direction is blocked, check current direction
+            const currentDir = ghost.dir || { x: 0, y: 0 };
+            const testPos = moveEntity(ghost, currentDir);
+            if (testPos.x === ghost.x && testPos.y === ghost.y) {
+              // Ghost is stuck, try any valid direction
+              const directions = [
+                { x: -1, y: 0 }, { x: 1, y: 0 }, { x: 0, y: -1 }, { x: 0, y: 1 }
+              ];
+              for (const dir of directions) {
+                const testPos2 = moveEntity(ghost, dir);
+                if (testPos2.x !== ghost.x || testPos2.y !== ghost.y) {
+                  ghost.dir = dir;
+                  break;
+                }
+              }
             }
           }
           
@@ -464,9 +521,11 @@ function PacMan() {
           // Check collision with Pac-Man
           if (ghost.x === pacman.x && ghost.y === pacman.y) {
             if (gameRef.current.powerMode) {
-              // Ghost eaten
-              ghost.x = 14;
-              ghost.y = 12;
+              // Ghost eaten - send back to ghost house, reset direction, and mark as eaten
+              ghost.x = 13;
+              ghost.y = 14;
+              ghost.dir = { x: 0, y: 0 }; // Reset direction
+              ghost.isEaten = true; // Mark as eaten so it returns to normal mode
               setScore(prev => prev + 200);
             } else {
               // Pac-Man eaten
@@ -483,8 +542,9 @@ function PacMan() {
                   pacman.dir = { x: 0, y: 0 };
                   gameRef.current.nextDir = { x: 0, y: 0 };
                   gameRef.current.ghosts.forEach((g, i) => {
-                    g.x = 13 + i;
-                    g.y = 12;
+                    g.x = 12 + i;
+                    g.y = 14;
+                    g.isEaten = false; // Reset eaten status
                   });
                   gameRef.current.powerMode = false;
                 }
@@ -521,10 +581,10 @@ function PacMan() {
     gameRef.current.pacman = { x: 15, y: 23, dir: { x: 0, y: 0 }, nextDir: { x: 0, y: 0 }, mouth: 0 };
     gameRef.current.nextDir = { x: 0, y: 0 };
     gameRef.current.ghosts = [
-      { x: 13, y: 13, dir: { x: -1, y: 0 }, color: '#ff0000' },
-      { x: 14, y: 13, dir: { x: 1, y: 0 }, color: '#ffb8ff' },
-      { x: 15, y: 13, dir: { x: 0, y: -1 }, color: '#00ffff' },
-      { x: 16, y: 13, dir: { x: 0, y: 1 }, color: '#ffb852' }
+      { x: 12, y: 14, dir: { x: -1, y: 0 }, color: '#ff0000', isEaten: false },
+      { x: 13, y: 14, dir: { x: 1, y: 0 }, color: '#ffb8ff', isEaten: false },
+      { x: 14, y: 14, dir: { x: 0, y: -1 }, color: '#00ffff', isEaten: false },
+      { x: 15, y: 14, dir: { x: 0, y: 1 }, color: '#ffb852', isEaten: false }
     ];
     gameRef.current.powerMode = false;
     setScore(0);
